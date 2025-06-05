@@ -1,5 +1,3 @@
-# Vamos montar o novo código completo para CompositorWindow.py conforme as instruções do Péricles
-compositor_window_code = """
 import sys
 from PySide6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton
@@ -131,6 +129,3 @@ if __name__ == "__main__":
     compositor.show()
     compositor.raise_()  # Regra 1: sempre por cima
     sys.exit(app.exec())
-"""
-
-compositor_window_code[:3000]  # Mostra uma prévia do código gerado

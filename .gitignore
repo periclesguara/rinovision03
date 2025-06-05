@@ -1,0 +1,28 @@
+# Ambientes virtuais
+venv/
+.env/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Arquivos temporários e de log
+*.log
+*.tmp
+
+# Arquivos de mídia grandes
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.png
+*.jpg
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Configs locais de IDE
+.vscode/
+.idea/

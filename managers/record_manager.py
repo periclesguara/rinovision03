@@ -67,6 +67,14 @@ class RecordManager:
 
         print(f"✅ [RecordManager] Vídeo final salvo em {final_output}")
 
+        # Gerar legenda a partir do áudio
+        from managers.subtitle_manager import gerar_legenda
+        legenda = gerar_legenda(self.audio_manager.get_audio_file())
+        legenda_path = os.path.join(self.output_dir, "gravacao_final.txt")
+        with open(legenda_path, "w", encoding="utf-8") as f:
+            f.write(legenda)
+        print(f"📝 [RecordManager] Legenda salva em {legenda_path}")
+
         return final_output
 
     def capture_frame(self):

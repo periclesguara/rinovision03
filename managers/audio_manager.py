@@ -69,3 +69,6 @@ if __name__ == "__main__":
     time.sleep(5)
     audio.stop_recording()
     print("Áudio gravado com sucesso!")
+
+    def get_audio_file(self):
+        return self.filename

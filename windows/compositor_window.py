@@ -8,11 +8,16 @@ from PySide6.QtGui import QPixmap
 from windows.base_window import BaseWindow
 from windows.webcam_window import WebcamWindow
 from components.control_panel import ControlPanel
+from managers.audio_manager import AudioManager
+from managers.record_manager import RecordManager
 
 
 class CompositorWindow(QWidget):
     def __init__(self):
         super().__init__()
+
+        from utils.patch_applier import auto_patch
+        auto_patch(self)
 
         self.setWindowTitle("RinoVision - Compositor PRO")
         self.setGeometry(100, 100, 1920, 1080)
@@ -63,6 +68,10 @@ class CompositorWindow(QWidget):
         self.render_timer = QTimer()
         self.render_timer.timeout.connect(self.render_composition)
         self.render_timer.start(100)
+
+        # Inicializar gravação
+        self.audio_manager = AudioManager()
+        self.record_manager = RecordManager(preview_widget=self.preview_label, audio_manager=self.audio_manager)
 
     def open_webcam(self):
         try:
@@ -121,6 +130,10 @@ class CompositorWindow(QWidget):
 
     def start_recording(self):
         print("Iniciar gravação")
+        if hasattr(self, 'record_manager'):
+            self.record_manager.start_recording()
+        else:
+            print("⚠️ RecordManager não configurado.")
 
 
 if __name__ == "__main__":

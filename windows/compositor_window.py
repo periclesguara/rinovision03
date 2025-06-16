@@ -1,144 +1,120 @@
-import sys
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton
+    QApplication,
+    QWidget,
+    QPushButton,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QFrame,
 )
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QPixmap
-
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QFont
+from managers.scene_manager import SceneManager
 from windows.base_window import BaseWindow
 from windows.webcam_window import WebcamWindow
-from components.control_panel import ControlPanel
-from managers.audio_manager import AudioManager
-from managers.record_manager import RecordManager
 
 
-class CompositorWindow(QWidget):
+class CompositorWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle("RinoVision - Compositor")
+        self.setGeometry(100, 100, 1400, 800)
+        self.setStyleSheet("background-color: #1e1e1e; color: white;")
 
-        from utils.patch_applier import auto_patch
-        auto_patch(self)
+        self.scene_manager = SceneManager()
 
-        self.setWindowTitle("RinoVision - Compositor PRO")
-        self.setGeometry(100, 100, 1920, 1080)
-        self.setStyleSheet("background-color: #111;")
+        self.central_frame = QFrame()
+        self.central_frame.setStyleSheet("background-color: #2c2c2c;")
+        self.setCentralWidget(self.central_frame)
 
-        self.webcam_window = None
-        self.base_window = None
+        self.layout = QVBoxLayout(self.central_frame)
+        self.button_layout = QHBoxLayout()
 
-        # Preview central
-        self.preview_label = QLabel("Preview Central")
-        self.preview_label.setAlignment(Qt.AlignCenter)
-        self.preview_label.setStyleSheet("background-color: black; color: white; font-size: 18px;")
-        self.preview_label.setFixedSize(1440, 810)
+        self.webcam_window = WebcamWindow()
+        self.base_window = BaseWindow()
 
-        # Painel lateral
-        self.control_panel = ControlPanel()
-        self.control_panel.sync_clicked.connect(self.sync_audio_video)
-        self.control_panel.export_clicked.connect(self.export_final_video)
-        self.control_panel.caption_clicked.connect(self.show_caption)
-        self.control_panel.record_clicked.connect(self.start_recording)
+        self.init_ui()
 
-        # Botões principais
-        self.btn_open_webcam = QPushButton("Abrir Webcam")
-        self.btn_open_base = QPushButton("Abrir Base")
-        self.btn_open_webcam.clicked.connect(self.open_webcam)
-        self.btn_open_base.clicked.connect(self.open_base)
+    def init_ui(self):
+        self.lock_btn = self.create_button("🔒 Lock", self.lock_windows)
+        self.rec_btn = self.create_button(
+            "🔴 REC", self.start_recording, highlight=True
+        )
+        self.stop_btn = self.create_button("⏹️ Stop", self.stop_recording)
+        self.fullscreen_btn = self.create_button("⛶ Tela Cheia", self.toggle_fullscreen)
+        self.edit_btn = self.create_button("✏️ Editor", self.placeholder_edition)
 
-        self.btn_open_webcam.setStyleSheet("color: white; background-color: #444; padding: 6px; border-radius: 5px;")
-        self.btn_open_base.setStyleSheet("color: white; background-color: #444; padding: 6px; border-radius: 5px;")
+        for btn in [
+            self.lock_btn,
+            self.rec_btn,
+            self.stop_btn,
+            self.fullscreen_btn,
+            self.edit_btn,
+        ]:
+            self.button_layout.addWidget(btn)
 
-        button_row = QHBoxLayout()
-        button_row.addWidget(self.btn_open_webcam)
-        button_row.addWidget(self.btn_open_base)
-        button_row.addStretch()
+        self.layout.addLayout(self.button_layout)
 
-        # Layout principal
-        main_layout = QVBoxLayout()
-        middle_layout = QHBoxLayout()
-        middle_layout.addWidget(self.control_panel)
-        middle_layout.addWidget(self.preview_label)
-        middle_layout.addStretch()
+    def create_button(self, text, callback, highlight=False):
+        btn = QPushButton(text)
+        btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        base_style = """
+            QPushButton {
+                background-color: #333;
+                border: 2px solid #00BCD4;
+                border-radius: 12px;
+                padding: 12px 20px;
+                font-size: 16px;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #444;
+                border: 2px solid #03A9F4;
+            }
+        """
+        rec_style = """
+            QPushButton {
+                background-color: #b71c1c;
+                border: 2px solid #f44336;
+                border-radius: 12px;
+                padding: 12px 20px;
+                font-size: 16px;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #d32f2f;
+                border: 2px solid #ff5252;
+            }
+        """
+        btn.setStyleSheet(rec_style if highlight else base_style)
+        btn.clicked.connect(callback)
+        return btn
 
-        main_layout.addLayout(button_row)
-        main_layout.addLayout(middle_layout)
-        self.setLayout(main_layout)
-
-        # Timer de preview (caso queira expandir no futuro com compositing real)
-        self.render_timer = QTimer()
-        self.render_timer.timeout.connect(self.render_composition)
-        self.render_timer.start(100)
-
-        # Inicializar gravação
-        self.audio_manager = AudioManager()
-        self.record_manager = RecordManager(preview_widget=self.preview_label, audio_manager=self.audio_manager)
-
-    def open_webcam(self):
-        try:
-            if self.webcam_window is None or not self.webcam_window.isVisible():
-                self.webcam_window = WebcamWindow()
-                self.webcam_window.setAttribute(Qt.WA_DeleteOnClose)
-                self.webcam_window.destroyed.connect(self.on_webcam_closed)
-                self.webcam_window.setWindowFlags(Qt.WindowStaysOnTopHint)
-                self.webcam_window.show()
-            else:
-                self.webcam_window.showNormal()
-                self.webcam_window.raise_()
-                self.webcam_window.activateWindow()
-        except Exception as e:
-            print(f"Erro ao abrir WebcamWindow: {e}")
-
-    def open_base(self):
-        try:
-            if self.base_window is None or not self.base_window.isVisible():
-                self.base_window = BaseWindow()
-                self.base_window.setAttribute(Qt.WA_DeleteOnClose)
-                self.base_window.destroyed.connect(self.on_base_closed)
-                self.base_window.setWindowFlags(Qt.Window)
-                self.base_window.show()
-            else:
-                self.base_window.showNormal()
-                self.base_window.raise_()
-                self.base_window.activateWindow()
-
-            # Regra 3: garantir ordem correta
-            if self.webcam_window:
-                self.webcam_window.raise_()
-                self.webcam_window.activateWindow()
-
-        except Exception as e:
-            print(f"Erro ao abrir BaseWindow: {e}")
-
-    def on_webcam_closed(self):
-        self.webcam_window = None
-
-    def on_base_closed(self):
-        self.base_window = None
-
-    def render_composition(self):
-        # Aqui pode vir código futuro que renderiza a composição final das camadas
-        pass
-
-    def sync_audio_video(self):
-        print("Sincronizar áudio e vídeo")
-
-    def export_final_video(self):
-        print("Exportar vídeo final")
-
-    def show_caption(self):
-        print("Exibir legenda")
+    def lock_windows(self):
+        print("[LOCK] Agrupando Base + Webcam")
+        self.scene_manager.add_object("BaseWindow")
+        self.scene_manager.add_object("WebcamWindow")
+        self.scene_manager.lock_group(["BaseWindow", "WebcamWindow"])
 
     def start_recording(self):
-        print("Iniciar gravação")
-        if hasattr(self, 'record_manager'):
-            self.record_manager.start_recording()
+        self.scene_manager.iniciar_gravacao()
+
+    def stop_recording(self):
+        self.scene_manager.parar_gravacao()
+
+    def toggle_fullscreen(self):
+        if self.isFullScreen():
+            self.showNormal()
         else:
-            print("⚠️ RecordManager não configurado.")
+            self.showFullScreen()
+
+    def placeholder_edition(self):
+        print("[Editor] Janela de edição ainda não implementada.")
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    app = QApplication([])
     compositor = CompositorWindow()
     compositor.show()
-    compositor.raise_()  # Regra 1: sempre por cima
-    sys.exit(app.exec())
+    app.exec()

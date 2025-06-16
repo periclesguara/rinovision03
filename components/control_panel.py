@@ -1,6 +1,4 @@
-from PySide6.QtWidgets import (
-    QWidget, QPushButton, QLabel, QVBoxLayout
-)
+from PySide6.QtWidgets import QWidget, QPushButton, QLabel, QVBoxLayout
 from PySide6.QtCore import Qt, Signal
 
 
@@ -14,7 +12,9 @@ class ControlPanel(QWidget):
         super().__init__(parent)
 
         self.setFixedSize(220, 400)
-        self.setStyleSheet("background-color: #333; border: 2px solid #888; border-radius: 8px;")
+        self.setStyleSheet(
+            "background-color: #333; border: 2px solid #888; border-radius: 8px;"
+        )
 
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(10, 10, 10, 10)

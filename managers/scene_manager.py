@@ -1,100 +1,123 @@
-import json
-import os
+import ffmpeg
+import time
+import threading
+import subprocess
 
 
 class SceneManager:
     def __init__(self):
-        # Estrutura: {'nome_objeto': {propriedades}}
         self.objects = {}
-        print("[SceneManager] ✅ Inicializado.")
+        self.is_recording = False
+        self.video_process = None
+        self.output_file = "output_final.mp4"
 
-    def add_object(self, name, x=0, y=0, width=640, height=360, locked=False, z_index=0, visible=True):
+    def add_object(
+        self, name, x=0, y=0, width=100, height=100, z_index=0, visible=True
+    ):
         self.objects[name] = {
-            'x': x,
-            'y': y,
-            'width': width,
-            'height': height,
-            'locked': locked,
-            'z_index': z_index,
-            'visible': visible
+            "x": x,
+            "y": y,
+            "width": width,
+            "height": height,
+            "locked": False,
+            "z_index": z_index,
+            "visible": visible,
         }
-        print(f"[SceneManager] ➕ Objeto '{name}' adicionado.")
+        print(f"[SceneManager] Objeto '{name}' adicionado.")
 
     def update_position(self, name, x, y):
-        if name in self.objects:
-            self.objects[name]['x'] = x
-            self.objects[name]['y'] = y
-            print(f"[SceneManager] 🔄 Posição de '{name}' atualizada para ({x}, {y}).")
+        if name in self.objects and not self.objects[name]["locked"]:
+            self.objects[name]["x"] = x
+            self.objects[name]["y"] = y
+            print(f"[SceneManager] Objeto '{name}' movido para ({x}, {y}).")
 
     def update_size(self, name, width, height):
-        if name in self.objects:
-            self.objects[name]['width'] = width
-            self.objects[name]['height'] = height
-            print(f"[SceneManager] 🔄 Tamanho de '{name}' atualizado para {width}x{height}.")
+        if name in self.objects and not self.objects[name]["locked"]:
+            self.objects[name]["width"] = width
+            self.objects[name]["height"] = height
+            print(
+                f"[SceneManager] Objeto '{name}' redimensionado para {width}x{height}."
+            )
 
     def set_locked(self, name, locked=True):
         if name in self.objects:
-            self.objects[name]['locked'] = locked
-            status = "🔒" if locked else "🔓"
-            print(f"[SceneManager] {status} '{name}'.")
+            self.objects[name]["locked"] = locked
+            estado = "travado" if locked else "destravado"
+            print(f"[SceneManager] Objeto '{name}' {estado}.")
 
     def set_visibility(self, name, visible=True):
         if name in self.objects:
-            self.objects[name]['visible'] = visible
-            status = "👁️" if visible else "🚫"
-            print(f"[SceneManager] {status} '{name}'.")
+            self.objects[name]["visible"] = visible
+            estado = "visível" if visible else "oculto"
+            print(f"[SceneManager] Objeto '{name}' agora está {estado}.")
 
-    def set_z_index(self, name, z_index):
-        if name in self.objects:
-            self.objects[name]['z_index'] = z_index
-            print(f"[SceneManager] 🔢 Z-Index de '{name}' definido como {z_index}.")
+    def lock_group(self, names):
+        for name in names:
+            self.set_locked(name, True)
+        print(f"[SceneManager] Grupo {names} travado como conjunto.")
+
+    def unlock_group(self, names):
+        for name in names:
+            self.set_locked(name, False)
+        print(f"[SceneManager] Grupo {names} destravado como conjunto.")
 
     def get_object_state(self, name):
         return self.objects.get(name, None)
 
-    def remove_object(self, name):
-        if name in self.objects:
-            del self.objects[name]
-            print(f"[SceneManager] ➖ Objeto '{name}' removido.")
+    def get_all_objects(self):
+        return self.objects
 
-    def clear_scene(self):
-        self.objects = {}
-        print("[SceneManager] 🗑️ Cena limpa.")
+    def reset(self):
+        self.objects.clear()
+        print("[SceneManager] Todos os objetos foram removidos.")
 
-    def save_scene(self, filename="scene.json"):
-        with open(filename, "w", encoding="utf-8") as f:
-            json.dump(self.objects, f, indent=4)
-        print(f"[SceneManager] 💾 Cena salva em '{filename}'.")
-
-    def load_scene(self, filename="scene.json"):
-        if not os.path.exists(filename):
-            print("[SceneManager] ❌ Arquivo de cena não encontrado.")
+    def iniciar_gravacao(self):
+        if self.is_recording:
+            print("[SceneManager] Gravação já está em andamento.")
             return
 
-        with open(filename, "r", encoding="utf-8") as f:
-            self.objects = json.load(f)
-        print(f"[SceneManager] ✅ Cena carregada de '{filename}'.")
+        print("[SceneManager] Iniciando gravação com ffmpeg...")
+        self.is_recording = True
 
-    def list_objects(self):
-        print("📜 [SceneManager] Objetos na cena:")
-        for name, props in self.objects.items():
-            print(f" → {name}: {props}")
+        def gravar():
+            try:
+                self.output_file = f"gravacao_{int(time.time())}.mp4"
+                comando = [
+                    "ffmpeg",
+                    "-y",
+                    "-f",
+                    "pulse",
+                    "-i",
+                    "default",
+                    "-f",
+                    "x11grab",
+                    "-r",
+                    "30",
+                    "-s",
+                    "1280x720",
+                    "-i",
+                    ":0.0",
+                    "-c:v",
+                    "libx264",
+                    "-preset",
+                    "ultrafast",
+                    "-c:a",
+                    "aac",
+                    self.output_file,
+                ]
+                self.video_process = subprocess.Popen(comando)
+                print(f"[SceneManager] Gravando em: {self.output_file}")
+            except Exception as e:
+                print(f"[SceneManager] Erro ao iniciar gravação: {e}")
 
+        threading.Thread(target=gravar, daemon=True).start()
 
-if __name__ == "__main__":
-    # 🚀 Teste independente
-    sm = SceneManager()
-
-    sm.add_object("Webcam", x=100, y=200, width=640, height=480, locked=False, z_index=1)
-    sm.add_object("BaseWindow", x=300, y=100, width=1280, height=720, locked=True, z_index=0)
-
-    sm.update_position("Webcam", 500, 500)
-    sm.set_locked("Webcam", True)
-    sm.set_z_index("Webcam", 3)
-
-    sm.save_scene("meu_projeto.json")
-
-    sm.clear_scene()
-    sm.load_scene("meu_projeto.json")
-
-    sm.list_objects()
+    def parar_gravacao(self):
+        if self.is_recording and self.video_process:
+            print("[SceneManager] Parando gravação...")
+            self.video_process.terminate()
+            self.video_process = None
+            self.is_recording = False
+            print(f"[SceneManager] Gravação finalizada: {self.output_file}")
+        else:
+            print("[SceneManager] Nenhuma gravação ativa para parar.")

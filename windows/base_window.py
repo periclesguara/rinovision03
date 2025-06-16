@@ -3,9 +3,18 @@ import os
 import cv2
 
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QPushButton, QVBoxLayout,
-    QFileDialog, QHBoxLayout, QSizePolicy, QComboBox,
-    QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QLabel
+    QApplication,
+    QWidget,
+    QPushButton,
+    QVBoxLayout,
+    QFileDialog,
+    QHBoxLayout,
+    QSizePolicy,
+    QComboBox,
+    QGraphicsView,
+    QGraphicsScene,
+    QGraphicsPixmapItem,
+    QLabel,
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap, QImage
@@ -98,8 +107,10 @@ class BaseWindow(QWidget):
 
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Selecionar Arquivo", "",
-            "Imagens e Vídeos (*.jpg *.jpeg *.png *.bmp *.mp4 *.avi *.mkv *.mov)"
+            self,
+            "Selecionar Arquivo",
+            "",
+            "Imagens e Vídeos (*.jpg *.jpeg *.png *.bmp *.mp4 *.avi *.mkv *.mov)",
         )
 
         if not file_path:

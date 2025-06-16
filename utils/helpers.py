@@ -13,13 +13,7 @@ def log(message: str, level="INFO"):
     """
     Print bonito e padronizado no terminal.
     """
-    icons = {
-        "INFO": "ℹ️",
-        "SUCCESS": "✅",
-        "ERROR": "❌",
-        "WARNING": "⚠️",
-        "DEBUG": "🐞"
-    }
+    icons = {"INFO": "ℹ️", "SUCCESS": "✅", "ERROR": "❌", "WARNING": "⚠️", "DEBUG": "🐞"}
     icon = icons.get(level.upper(), "ℹ️")
     print(f"{icon} [{level.upper()}] {message}")
 
@@ -42,4 +36,6 @@ def safe_filename(filename: str) -> str:
     """
     Gera um nome de arquivo seguro (sem caracteres inválidos).
     """
-    return "".join(c for c in filename if c.isalnum() or c in (' ', '.', '_', '-')).rstrip()
+    return "".join(
+        c for c in filename if c.isalnum() or c in (" ", ".", "_", "-")
+    ).rstrip()

@@ -2,6 +2,7 @@ import pytest
 from PySide6.QtWidgets import QApplication
 from windows.compositor_window import CompositorWindow
 
+
 @pytest.fixture
 def app(qtbot):
     test_app = QApplication.instance() or QApplication([])

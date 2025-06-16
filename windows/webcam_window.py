@@ -4,9 +4,16 @@ import sys
 import mediapipe as mp
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QComboBox, QSlider, QLabel,
-    QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QComboBox,
+    QSlider,
+    QLabel,
+    QGraphicsView,
+    QGraphicsScene,
+    QGraphicsPixmapItem,
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap, QImage
@@ -20,7 +27,9 @@ class WebcamWindow(QWidget):
         self.setGeometry(100, 100, 1280, 720)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
-        self.mp_selfie = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
+        self.mp_selfie = mp.solutions.selfie_segmentation.SelfieSegmentation(
+            model_selection=1
+        )
         self.cap = None
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
@@ -111,7 +120,9 @@ class WebcamWindow(QWidget):
             qt_format = QImage.Format_RGB888
 
         scale = self.zoom_slider.value() / 100.0
-        output = cv2.resize(output, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        output = cv2.resize(
+            output, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA
+        )
 
         h, w, ch = output.shape
         bytes_per_line = ch * w
@@ -128,6 +139,3 @@ class WebcamWindow(QWidget):
             self.cap.release()
         self.timer.stop()
         event.accept()
-
-      
-        

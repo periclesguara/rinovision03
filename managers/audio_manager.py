@@ -12,7 +12,7 @@ class AudioManager:
         self.filename = "audio_temp.wav"
         self._thread = None
 
-    def start_recording(self):
+    def start_audio_recording(self):
         if self.is_recording:
             print("[AudioManager] Já está gravando!")
             return
@@ -25,7 +25,9 @@ class AudioManager:
         self._thread.start()
 
     def _record(self):
-        with sd.InputStream(samplerate=self.samplerate, channels=self.channels, callback=self._callback):
+        with sd.InputStream(
+            samplerate=self.samplerate, channels=self.channels, callback=self._callback
+        ):
             while self.is_recording:
                 sd.sleep(100)
 
@@ -34,7 +36,7 @@ class AudioManager:
             print(f"[AudioManager] Status: {status}")
         self.audio_data.append(indata.copy())
 
-    def stop_recording(self):
+    def stop_audio_recording(self):
         if not self.is_recording:
             print("[AudioManager] Não estava gravando.")
             return
@@ -43,11 +45,13 @@ class AudioManager:
         self.is_recording = False
         self._thread.join()
 
-        audio_np = b''.join([x.tobytes() for x in self.audio_data])
-        total_frames = sum(x.shape[0] for x in self.audio_data)
-
-        with sf.SoundFile(self.filename, mode='w', samplerate=self.samplerate,
-                           channels=self.channels, subtype='PCM_16') as file:
+        with sf.SoundFile(
+            self.filename,
+            mode="w",
+            samplerate=self.samplerate,
+            channels=self.channels,
+            subtype="PCM_16",
+        ) as file:
             for chunk in self.audio_data:
                 file.write(chunk)
 
@@ -56,19 +60,6 @@ class AudioManager:
     def reset(self):
         self.audio_data = []
         self.is_recording = False
-
-
-if __name__ == "__main__":
-    # 🚀 Teste independente
-    import time
-
-    audio = AudioManager()
-
-    print("Gravando por 5 segundos...")
-    audio.start_recording()
-    time.sleep(5)
-    audio.stop_recording()
-    print("Áudio gravado com sucesso!")
 
     def get_audio_file(self):
         return self.filename

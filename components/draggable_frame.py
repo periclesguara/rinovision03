@@ -1,10 +1,20 @@
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QPushButton, QComboBox, QSlider,
-    QLabel, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QHBoxLayout
+    QApplication,
+    QWidget,
+    QVBoxLayout,
+    QPushButton,
+    QComboBox,
+    QSlider,
+    QLabel,
+    QGraphicsView,
+    QGraphicsScene,
+    QGraphicsPixmapItem,
+    QHBoxLayout,
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap, QImage
@@ -25,7 +35,9 @@ class WebcamWindow(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         # MediaPipe para segmentação de fundo
-        self.mp_selfie_segmentation = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
+        self.mp_selfie_segmentation = (
+            mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
+        )
 
         # Webcam
         self.cap = None
@@ -110,7 +122,9 @@ class WebcamWindow(QWidget):
 
         # Redimensionamento (zoom)
         scale = self.resize_slider.value() / 100.0
-        output_frame = cv2.resize(output_frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        output_frame = cv2.resize(
+            output_frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA
+        )
 
         # Conversão para QPixmap
         h, w, ch = output_frame.shape

@@ -1,6 +1,12 @@
 from PySide6.QtWidgets import (
-    QMainWindow, QMdiArea, QToolBar, QPushButton, QStatusBar,
-    QMenuBar, QMenu, QMessageBox
+    QMainWindow,
+    QMdiArea,
+    QToolBar,
+    QPushButton,
+    QStatusBar,
+    QMenuBar,
+    QMenu,
+    QMessageBox,
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
@@ -110,8 +116,9 @@ class MainWindow(QMainWindow):
     def _show_about(self):
         """Exibe a janela Sobre."""
         QMessageBox.information(
-            self, "Sobre RinoVision03",
-            "RinoVision03 Studio Pro\nDesenvolvido por Péricles.\nVersão 1.0"
+            self,
+            "Sobre RinoVision03",
+            "RinoVision03 Studio Pro\nDesenvolvido por Péricles.\nVersão 1.0",
         )
 
     # =====================

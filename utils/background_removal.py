@@ -5,7 +5,9 @@ import mediapipe as mp
 
 class BackgroundRemover:
     def __init__(self):
-        self.selfie_segmentation = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
+        self.selfie_segmentation = mp.solutions.selfie_segmentation.SelfieSegmentation(
+            model_selection=1
+        )
 
     def remove_background(self, frame, bg_color=(0, 0, 0), transparent=False):
         """

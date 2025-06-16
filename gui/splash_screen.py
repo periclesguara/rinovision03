@@ -22,7 +22,8 @@ class SplashScreen(QSplashScreen):
         # Barra de progresso
         self.progress = QProgressBar(self)
         self.progress.setGeometry(10, pixmap.height() - 30, pixmap.width() - 20, 20)
-        self.progress.setStyleSheet("""
+        self.progress.setStyleSheet(
+            """
             QProgressBar {
                 background-color: #333;
                 color: white;
@@ -34,7 +35,8 @@ class SplashScreen(QSplashScreen):
                 background-color: #05B8CC;
                 width: 20px;
             }
-        """)
+        """
+        )
         self.progress.setValue(0)
 
     def update_message(self, message, progress_value):

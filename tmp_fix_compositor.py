@@ -116,7 +116,6 @@ if __name__ == "__main__":
 
     def open_webcam_window(self):
         from windows.webcam_window import WebcamWindow
-from windows.image_composer_window import ImageComposerWindow
 
         self.webcam_window = WebcamWindow()
         self.webcam_window.show()
@@ -131,9 +130,7 @@ from windows.image_composer_window import ImageComposerWindow
 
 
 
-
     def open_image_composer(self):
         if self.image_composer_window is None:
             self.image_composer_window = ImageComposerWindow(self.scene_manager)
         self.image_composer_window.show()
-

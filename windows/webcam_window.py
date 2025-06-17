@@ -34,6 +34,9 @@ class WebcamWindow(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
 
+        self.setup_ui()
+
+    def setup_ui(self):
         layout = QVBoxLayout(self)
 
         self.view = QGraphicsView()
@@ -98,7 +101,6 @@ class WebcamWindow(QWidget):
         condition = np.stack((mask,) * 3, axis=-1) > 0.5
         bg_choice = self.bg_combo.currentText()
 
-        h, w, _ = frame_rgb.shape
         if bg_choice == "Branco":
             background = np.full(frame_rgb.shape, 255, dtype=np.uint8)
         elif bg_choice == "Preto":
@@ -107,7 +109,7 @@ class WebcamWindow(QWidget):
             background = np.full(frame_rgb.shape, (0, 255, 0), dtype=np.uint8)
         elif bg_choice == "Blur":
             background = cv2.GaussianBlur(frame_rgb, (15, 15), 0)
-        else:  # Transparente ou default
+        else:
             background = np.zeros(frame_rgb.shape, dtype=np.uint8)
 
         output = np.where(condition, frame_rgb, background)
@@ -120,9 +122,7 @@ class WebcamWindow(QWidget):
             qt_format = QImage.Format_RGB888
 
         scale = self.zoom_slider.value() / 100.0
-        output = cv2.resize(
-            output, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA
-        )
+        output = cv2.resize(output, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
 
         h, w, ch = output.shape
         bytes_per_line = ch * w

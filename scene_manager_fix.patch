@@ -1,0 +1,19 @@
+--- managers/scene_manager.py
++++ managers/scene_manager.py
+@@ -1,7 +1,6 @@
+ import os
+-import threading
+-from windows.scene_options_window import SceneOptionsWindow
+ 
+ class SceneManager:
+     def __init__(self):
+         self.objects = {}
+@@ def reset(self):
+         self.objects.clear()
+         print("[SceneManager] Todos os objetos foram removidos.")
++
++
++def open_scene_options():
++    from windows.scene_options_window import SceneOptionsWindow
++    window = SceneOptionsWindow()
++    window.show()

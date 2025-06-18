@@ -1,0 +1,5 @@
+🕒 76fddc2 2025-06-16 periclesguara
+📦 🚀 Refatoração total do CompositorWindow: limpeza de erros, botão do ImageComposer injetado, teste de integridade validado
+
+🕒 6aad3b0 2025-06-16 periclesguara
+📦 Auto commit: 2025-06-16 16:08:45

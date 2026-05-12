@@ -28,6 +28,14 @@ LEGACY_IMPORTS = [
     "managers.editor_manager.text_effects_manager",
 ]
 
+WEBCAM_WINDOW_IMPORTS = [
+    "windows.webcam_window",
+    "windows.webcam_window_refactor",
+    "windows.webcam_window_refactor_v2",
+    "windows.webcam_window_refactorv3",
+    "windows.webcam_window_refactorv4",
+]
+
 
 def import_status(module_name: str) -> dict:
     try:
@@ -59,6 +67,24 @@ def music_manager_capability() -> dict:
     except Exception as exc:
         capability["adapter_status"] = {"available": False, "import_error": f"{type(exc).__name__}: {exc}"}
     return capability
+
+
+def webcam_capability() -> dict:
+    try:
+        from rinovision.capture.webcam import WebcamCaptureAdapter
+
+        adapter = WebcamCaptureAdapter()
+        adapter_status = adapter.status()
+    except Exception as exc:
+        adapter_status = {"available": False, "import_error": f"{type(exc).__name__}: {exc}"}
+    return {
+        "adapter_status": adapter_status,
+        "legacy_manager_imports": {
+            "managers.webcam_manager": import_status("managers.webcam_manager"),
+            "managers.webcam_manager_refactorv1": import_status("managers.webcam_manager_refactorv1"),
+        },
+        "legacy_window_imports": {name: import_status(name) for name in WEBCAM_WINDOW_IMPORTS},
+    }
 
 
 def gitignore_contains(pattern: str) -> bool:
@@ -93,6 +119,7 @@ def run_healthcheck() -> dict:
         "legacy_imports": {name: import_status(name) for name in LEGACY_IMPORTS},
         "media_adapters": {
             "music_manager": music_manager_capability(),
+            "webcam": webcam_capability(),
         },
         "rinovision_import": import_status("rinovision"),
         "env_file_exists": (ROOT / ".env").exists(),
@@ -138,7 +165,11 @@ def main() -> int:
     print(f"docs folder: {'yes' if report['docs_folder_exists'] else 'no'}")
     print(f"compile ok: {'yes' if report['compile']['ok'] else 'no'}")
     music = report["media_adapters"]["music_manager"]
+    webcam = report["media_adapters"]["webcam"]["adapter_status"]
     print(f"music manager import: {'yes' if music['import_ok'] else 'no'}")
+    print(f"webcam adapter available: {'yes' if webcam.get('available') else 'no'}")
+    if webcam.get("missing_dependencies"):
+        print(f"webcam missing dependencies: {', '.join(webcam['missing_dependencies'])}")
     print(f"report: {report['report_path']}")
     return 0
 

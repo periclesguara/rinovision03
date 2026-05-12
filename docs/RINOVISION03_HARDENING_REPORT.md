@@ -23,6 +23,13 @@
 - `rinovision/editing/compositor.py`
 - `rinovision/capture/audio.py`
 - `rinovision/capture/webcam.py`
+- `managers/webcam_manager.py`
+- `managers/webcam_manager_refactorv1.py`
+- `windows/webcam_window.py`
+- `windows/webcam_window_refactor.py`
+- `windows/webcam_window_refactor_v2.py`
+- `windows/webcam_window_refactorv3.py`
+- `windows/webcam_window_refactorv4.py`
 - `rinovision/capture/screen.py`
 - `rinovision/editing/exporter.py`
 - `rinovision/editing/music.py`
@@ -34,6 +41,7 @@
 - `pytest -q`: `9 passed in 0.40s`
 - Tests cover path safety, data folder creation, pipeline transitions, project/artifact registry, AI video stub flow, editing stub flow, ffprobe missing behavior, and healthcheck secret hygiene.
 - After the music manager hardening: `pytest -q` reports `12 passed in 0.48s`.
+- After the webcam import-safety hardening: `pytest -q` reports `16 passed in 0.82s`.
 
 ## Tests Failed
 
@@ -49,6 +57,7 @@
 - `python main.py --editing-demo`: passed
 - `python main.py --safe-mode`: passed with CLI fallback because GUI dependencies are unavailable in this shell
 - `python -m compileall rinovision scripts tests managers`: passed after the music manager fix
+- `python -m compileall rinovision scripts tests managers windows`: passed after the webcam hardening
 
 ## Missing Dependencies
 
@@ -58,6 +67,8 @@ The foundation works without these, but legacy imports report missing optional d
 - `PySide6`
 - import package `ffmpeg` from `ffmpeg-python`
 - `cv2` from OpenCV
+- `numpy`
+- `mediapipe`
 - `moviepy`
 
 ## Legacy Imports That Work
@@ -65,17 +76,33 @@ The foundation works without these, but legacy imports report missing optional d
 - `managers.editor_manager.export_manager`
 - `managers.editor_manager.music_manager`
 - `managers.editor_manager.subtitle_manager`
+- `managers.webcam_manager`
+- `managers.webcam_manager_refactorv1`
+- `windows.webcam_window`
+- `windows.webcam_window_refactor`
+- `windows.webcam_window_refactor_v2`
+- `windows.webcam_window_refactorv3`
+- `windows.webcam_window_refactorv4`
 
 ## Legacy Imports That Fail
 
 - `managers.audio_manager`: missing `sounddevice`
 - `managers.record_manager`: missing `PySide6`
 - `managers.scene_manager`: missing import package `ffmpeg`
-- `managers.webcam_manager`: missing `cv2`
-- `managers.webcam_manager_refactorv1`: missing `cv2`
 - `managers.editor_manager.text_effects_manager`: missing `moviepy`
 
 The new adapters catch these failures and expose stub status instead of crashing at import time.
+
+## Webcam Import Safety
+
+Fixed. Webcam managers and webcam windows now import without opening camera hardware, starting GUI timers, importing cv2/mediapipe eagerly, or requiring PySide6 during module import. Runtime webcam use still requires optional dependencies and explicit window/manager instantiation.
+
+Current healthcheck reports:
+
+- legacy webcam manager imports: ok
+- legacy webcam window imports: ok
+- webcam adapter availability: false in this shell
+- missing webcam dependencies: `opencv-python`, `numpy`, `mediapipe`
 
 ## Music Manager Import Side Effect
 
@@ -99,4 +126,4 @@ Validated. It creates a source placeholder, video probe report, edit plan, edite
 
 ## Recommended Next Task
 
-Install/verify optional GUI/media dependencies in a controlled virtual environment and test `python main.py` with PySide6 available. After that, repair remaining legacy import failures for webcam/audio/text effects one module at a time.
+Install/verify optional GUI/media dependencies in a controlled virtual environment and test `python main.py` with PySide6 available. After that, repair remaining legacy import failures for audio and text effects one module at a time.

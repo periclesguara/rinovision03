@@ -31,18 +31,18 @@ class WebcamWindow(QWidget):
         self.layout = QVBoxLayout(self)
         self.setLayout(self.layout)
 
-        # Label da webcam (com redimensionamento automático)
+        # Label da webcam
         self.video_label = QLabel()
         self.video_label.setAlignment(Qt.AlignCenter)
         self.video_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.layout.addWidget(self.video_label)
 
-        # Botão de controle da moldura (transparente ou opaca)
+        # Botão de controle da moldura (transparente ou visível)
         self.toggle_frame_button = QPushButton("Moldura: ON")
         self.toggle_frame_button.clicked.connect(self.toggle_frame_transparency)
         self.layout.addWidget(self.toggle_frame_button)
 
-        # Botões de efeito
+        # Botões de efeitos visuais
         self.buttons_layout = QHBoxLayout()
         self.layout.addLayout(self.buttons_layout)
 
@@ -56,19 +56,10 @@ class WebcamWindow(QWidget):
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(30)
 
-        self.update_frame_transparency()
-
     def toggle_frame_transparency(self):
         self.transparent_frame = not self.transparent_frame
-        self.update_frame_transparency()
-
-    def update_frame_transparency(self):
-        if self.transparent_frame:
-            self.setWindowOpacity(0.01)
-            self.toggle_frame_button.setText("Moldura: OFF")
-        else:
-            self.setWindowOpacity(1.0)
-            self.toggle_frame_button.setText("Moldura: ON")
+        self.toggle_frame_button.setText("Moldura: OFF" if self.transparent_frame else "Moldura: ON")
+        self.setAttribute(Qt.WA_TranslucentBackground, self.transparent_frame)
 
     def set_effect(self, effect_name):
         self.effect = effect_name
@@ -79,7 +70,7 @@ class WebcamWindow(QWidget):
         if frame is None:
             return
 
-        # Corrigir para RGB se necessário
+        # Conversão de cor
         if frame.shape[2] == 4:
             frame = frame[:, :, :3]
 
@@ -100,11 +91,9 @@ class WebcamWindow(QWidget):
         self.webcam.release()
         super().closeEvent(event)
 
-# Teste direto
 if __name__ == "__main__":
     from PySide6.QtWidgets import QApplication
     import sys
-    import cv2
     app = QApplication(sys.argv)
     win = WebcamWindow()
     win.show()

@@ -1,0 +1,8 @@
+openai
+python-dotenv
+crewai
+langchain
+langchain-openai
+langchain-community
+faiss-cpu
+moviepy

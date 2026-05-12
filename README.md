@@ -1,21 +1,101 @@
-# 🧠 RinoVision03
+# RinoVision03
 
-Sistema de inteligência assistiva multimídia, projetado por [@periclesguara](https://github.com/periclesguara), com integração nativa à API GPT-4o da OpenAI.
+## What Is RinoVision
 
-> Projeto experimental e modular para automação de conteúdo, resposta inteligente e controle multimídia.
+RinoVision is a Python desktop creator-tech pipeline for capture, composition, editing, subtitles, music, text effects, exports, and AI-assisted video workflows.
 
-## 🚀 Funcionalidades
+## Current Status
 
-- 🧠 Agente GPT-4o ativo via API
-- 🔌 Modularização do código (client OpenAI separado)
-- 🧪 Script de teste funcional: `test_openai.py`
-- 🎥 Base para integração com interface PySide6 (em construção)
+This repository is a legacy rescue and product foundation. The existing PySide6 GUI and managers are preserved, while a new `rinovision/` package provides safer paths, project manifests, artifact tracking, pipeline states, AI Video Maker stubs, editing stubs, assistant adapters, and health checks.
 
-## 📦 Setup
+## Legacy Baseline
+
+The current legacy entry point is still `main.py`, which launches the existing compositor GUI by default. Legacy folders such as `windows/`, `managers/`, `components/`, `utils/`, `assistente/`, and `test/` were not deleted.
+
+## Safe Startup
 
 ```bash
-git clone https://github.com/periclesguara/rinovision03.git
-cd rinovision03
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+python main.py
+python main.py --safe-mode
+python main.py --healthcheck
+python main.py --ai-video-demo
+python main.py --editing-demo
+```
+
+`python main.py` requires GUI dependencies such as PySide6. `--safe-mode` uses the new compatibility adapter and falls back to a CLI message if GUI dependencies are unavailable. `--safe-foundation` remains as an alias.
+
+## Healthcheck
+
+```bash
+python scripts/rinovision_healthcheck.py
+python main.py --healthcheck
+```
+
+The healthcheck writes `data/reports/healthcheck_report.json` and checks Python, project/data roots, required folders, ffmpeg/ffprobe, legacy manager imports, new package import, `.env` existence without printing secrets, `.gitignore` runtime rules, and compile status.
+
+## Data Folders
+
+Runtime artifacts belong under `data/`, including:
+
+- `data/input/`
+- `data/output/`
+- `data/tmp/`
+- `data/audio/`
+- `data/video/`
+- `data/images/`
+- `data/frames/`
+- `data/subtitles/`
+- `data/exports/`
+- `data/reports/`
+- `data/projects/`
+- `data/ai_video/`
+- `data/edited_videos/`
+- `data/edit_plans/`
+
+Fixed project resources stay under `assets/`.
+
+## AI Video Maker Concept
+
+AI Video Maker currently uses provider-neutral stubs. It creates script, storyboard, prompts, provider request/response JSON, and raw AI video placeholders. Raw generated AI video is never treated as final export; it is routed into the editing pipeline.
+
+Demo:
+
+```bash
+python main.py --ai-video-demo
+```
+
+## Editing Pipeline Concept
+
+The editing foundation accepts capture, upload, AI video, or editing-only sources. It can probe video with `ffprobe` when available, create an edit plan, create edited video placeholders, generate subtitle/thumbnail placeholders, and create export package manifests.
+
+Demo:
+
+```bash
+python main.py --editing-demo
+```
+
+## Security Notes
+
+Do not commit `.env`. API providers must be configured through environment variables and provider adapters. Legacy hardcoded API key patterns were redacted during the safety pass; rotate any keys that may have appeared in old logs or history.
+
+## Development Commands
+
+```bash
+python scripts/rinovision_healthcheck.py
+python -m compileall rinovision scripts tests
+pytest -q
+python main.py
+python main.py --safe-mode
+python main.py --ai-video-demo
+python main.py --editing-demo
+```
+
+Current validation target is the new foundation, not the full legacy tree. Some legacy modules still require optional GUI/media dependencies.
+
+Optional grouped requirements were added:
+
+- `requirements-core.txt`
+- `requirements-dev.txt`
+- `requirements-ai.txt`
+
+The original `requirements.txt` is preserved.

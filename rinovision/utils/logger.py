@@ -1,0 +1,1 @@
+from rinovision.logging_config import configure_logging

@@ -1,32 +1,80 @@
-# Ambientes virtuais
-venv/
-.env/
+.env
+*.env
+.env.*
+!.env.example
 
-# Cache Python
 __pycache__/
-*.py[cod]
+*.pyc
 *.pyo
+*.pyd
 
-# Arquivos temporários e de log
-*.log
-*.tmp
+.venv/
+venv/
+env/
 
-# Arquivos de mídia grandes
-*.mp4
-*.avi
-*.mov
-*.mkv
-*.png
-*.jpg
+logs/
+output/
+frames/
+music/generated/
+data/output/
+data/tmp/
+data/frames/
+data/reports/*.json
+data/audio/generated/
+data/video/generated/
+data/exports/
+data/edited_videos/
+data/ai_video/generated_raw/
+data/ai_video/provider_responses/
 
-# Arquivos do sistema
+!data/**/.gitkeep
+
 .DS_Store
 Thumbs.db
-
-# Configs locais de IDE
 .vscode/
 .idea/
 
-.env
-__pycache__/
-*.pyc
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.avi
+*.wav
+*.mp3
+*.m4a
+*.aac
+
+*.log
+*.tmp
+
+# RinoVision generated runtime artifacts
+data/ai_video/prompts/*.json
+data/ai_video/provider_requests/*.json
+data/ai_video/provider_responses/*.json
+data/ai_video/scripts/*.json
+data/ai_video/storyboards/*.json
+data/input/*
+!data/input/.gitkeep
+data/projects/*
+!data/projects/.gitkeep
+data/edit_plans/*.json
+data/images/*_thumbnail_placeholder.json
+data/subtitles/*.srt
+data/reports/*
+!data/reports/.gitkeep
+data/edited_videos/*
+!data/edited_videos/.gitkeep
+data/output/*
+!data/output/.gitkeep
+data/tmp/*
+!data/tmp/.gitkeep
+
+# Command output snapshots
+docs/final_*.txt
+docs/final_*.exit
+docs/freeze_*.txt
+docs/freeze_*.exit
+docs/hardening_*.txt
+docs/hardening_*.exit
+docs/pip_install_*.txt
+docs/pip_install_*.exit

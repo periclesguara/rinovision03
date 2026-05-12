@@ -38,6 +38,29 @@ def import_status(module_name: str) -> dict:
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
 
+def music_manager_capability() -> dict:
+    status = import_status("managers.editor_manager.music_manager")
+    capability = {
+        "import_ok": status["ok"],
+        "ffmpeg_available": shutil.which("ffmpeg") is not None,
+        "function_available": False,
+        "adapter_available": False,
+    }
+    if status["ok"]:
+        module = importlib.import_module("managers.editor_manager.music_manager")
+        capability["function_available"] = callable(getattr(module, "inserir_musica_de_fundo", None))
+    try:
+        from rinovision.editing.music import MusicAdapter
+
+        adapter = MusicAdapter()
+        adapter_status = adapter.status()
+        capability["adapter_available"] = adapter_status.get("available", False)
+        capability["adapter_status"] = adapter_status
+    except Exception as exc:
+        capability["adapter_status"] = {"available": False, "import_error": f"{type(exc).__name__}: {exc}"}
+    return capability
+
+
 def gitignore_contains(pattern: str) -> bool:
     gitignore = ROOT / ".gitignore"
     return gitignore.exists() and pattern in gitignore.read_text(encoding="utf-8")
@@ -68,6 +91,9 @@ def run_healthcheck() -> dict:
         "ffmpeg_available": shutil.which("ffmpeg") is not None,
         "ffprobe_available": shutil.which("ffprobe") is not None,
         "legacy_imports": {name: import_status(name) for name in LEGACY_IMPORTS},
+        "media_adapters": {
+            "music_manager": music_manager_capability(),
+        },
         "rinovision_import": import_status("rinovision"),
         "env_file_exists": (ROOT / ".env").exists(),
         "env_example_exists": (ROOT / ".env.example").exists(),
@@ -111,6 +137,8 @@ def main() -> int:
     print(f"tests folder: {'yes' if report['tests_folder_exists'] else 'no'}")
     print(f"docs folder: {'yes' if report['docs_folder_exists'] else 'no'}")
     print(f"compile ok: {'yes' if report['compile']['ok'] else 'no'}")
+    music = report["media_adapters"]["music_manager"]
+    print(f"music manager import: {'yes' if music['import_ok'] else 'no'}")
     print(f"report: {report['report_path']}")
     return 0
 

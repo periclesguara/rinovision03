@@ -87,6 +87,26 @@ def webcam_capability() -> dict:
     }
 
 
+def ai_video_creator_capability() -> dict:
+    package_status = import_status("rinovision.ai_video_creator")
+    local_status = import_status("rinovision.ai_video_creator.providers.local_stub")
+    openai_status = import_status("rinovision.ai_video_creator.providers.openai_video")
+    openai_capability = {"dry_run": True, "api_key_present": bool(os.getenv("OPENAI_API_KEY"))}
+    if openai_status["ok"]:
+        try:
+            from rinovision.ai_video_creator.providers.openai_video import OpenAIVideoProvider
+
+            openai_capability.update(OpenAIVideoProvider(dry_run=True).capability())
+        except Exception as exc:
+            openai_capability["error"] = f"{type(exc).__name__}: {exc}"
+    return {
+        "package_import": package_status,
+        "local_stub_provider_import": local_status,
+        "openai_video_provider_import": openai_status,
+        "openai_video_provider": openai_capability,
+    }
+
+
 def gitignore_contains(pattern: str) -> bool:
     gitignore = ROOT / ".gitignore"
     return gitignore.exists() and pattern in gitignore.read_text(encoding="utf-8")
@@ -121,6 +141,7 @@ def run_healthcheck() -> dict:
             "music_manager": music_manager_capability(),
             "webcam": webcam_capability(),
         },
+        "ai_video_creator": ai_video_creator_capability(),
         "rinovision_import": import_status("rinovision"),
         "env_file_exists": (ROOT / ".env").exists(),
         "env_example_exists": (ROOT / ".env.example").exists(),
@@ -170,6 +191,9 @@ def main() -> int:
     print(f"webcam adapter available: {'yes' if webcam.get('available') else 'no'}")
     if webcam.get("missing_dependencies"):
         print(f"webcam missing dependencies: {', '.join(webcam['missing_dependencies'])}")
+    creator = report["ai_video_creator"]
+    print(f"ai video creator import: {'yes' if creator['package_import']['ok'] else 'no'}")
+    print(f"openai video dry-run: {'yes' if creator['openai_video_provider'].get('dry_run') else 'no'}")
     print(f"report: {report['report_path']}")
     return 0
 

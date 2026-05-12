@@ -19,6 +19,7 @@ python main.py
 python main.py --safe-mode
 python main.py --healthcheck
 python main.py --ai-video-demo
+python main.py --ai-video-creator-demo
 python main.py --editing-demo
 ```
 
@@ -64,6 +65,24 @@ Demo:
 python main.py --ai-video-demo
 ```
 
+## AI Video Creator Architecture
+
+`rinovision/ai_video_creator/` is the dedicated brief-to-video-substrate pipeline. It turns a creative brief into a deterministic local script, storyboard, provider prompts, a provider job, a raw generated video placeholder, an editing import, and a local social package draft.
+
+Workflow:
+
+```text
+brief -> script -> storyboard -> prompts -> provider job -> raw substrate -> editing pipeline -> social package draft
+```
+
+Local stub mode makes no external API calls and writes JSON/text/placeholders under `data/ai_video_creator/`. The OpenAI video provider exists only as a dry-run adapter for now; it imports without `OPENAI_API_KEY`, does not call the network in tests, and does not store API keys in artifacts. AI-generated video is raw audiovisual substrate, not the final product, and must be routed through editing before export. Social packages are local drafts for manual upload to Instagram, Facebook, and YouTube; there is no automatic publishing.
+
+Demo:
+
+```bash
+python main.py --ai-video-creator-demo
+```
+
 ## Editing Pipeline Concept
 
 The editing foundation accepts capture, upload, AI video, or editing-only sources. It can probe video with `ffprobe` when available, create an edit plan, create edited video placeholders, generate subtitle/thumbnail placeholders, and create export package manifests.
@@ -87,6 +106,7 @@ pytest -q
 python main.py
 python main.py --safe-mode
 python main.py --ai-video-demo
+python main.py --ai-video-creator-demo
 python main.py --editing-demo
 ```
 

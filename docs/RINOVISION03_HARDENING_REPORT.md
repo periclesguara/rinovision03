@@ -42,6 +42,7 @@
 - Tests cover path safety, data folder creation, pipeline transitions, project/artifact registry, AI video stub flow, editing stub flow, ffprobe missing behavior, and healthcheck secret hygiene.
 - After the music manager hardening: `pytest -q` reports `12 passed in 0.48s`.
 - After the webcam import-safety hardening: `pytest -q` reports `16 passed in 0.82s`.
+- After the AI Video Creator module: `pytest -q` reports `24 passed`.
 
 ## Tests Failed
 
@@ -54,10 +55,12 @@
 - `pytest -q`: passed
 - `python main.py --healthcheck`: passed
 - `python main.py --ai-video-demo`: passed
+- `python main.py --ai-video-creator-demo`: passed
 - `python main.py --editing-demo`: passed
 - `python main.py --safe-mode`: passed with CLI fallback because GUI dependencies are unavailable in this shell
 - `python -m compileall rinovision scripts tests managers`: passed after the music manager fix
 - `python -m compileall rinovision scripts tests managers windows`: passed after the webcam hardening
+- AI Video Creator acceptance compile/tests pass with the new module included.
 
 ## Missing Dependencies
 
@@ -119,6 +122,19 @@ Fixed. `managers/editor_manager/music_manager.py` no longer writes `/mnt/data/mu
 ## AI Video Maker Stub Status
 
 Validated. It creates script, storyboard, prompts, provider request, provider response, raw AI placeholder JSON, raw `.placeholder`, and an editing input artifact under `data/`. The project reaches `AI_VIDEO_IMPORTED_FOR_EDITING`. Raw AI video is not marked as final export.
+
+## AI Video Creator Status
+
+Validated. `rinovision/ai_video_creator/` creates a brief, script, storyboard, prompt set, provider job, raw video placeholder, editing import report, edit plan, and social package draft. Local stub mode makes no external calls. The OpenAI video provider is present in dry-run mode and imports without requiring `OPENAI_API_KEY`. Raw AI video is treated as substrate and routed into the Editing Pipeline before any export path.
+
+Social package draft outputs are local/manual-upload only:
+
+- Instagram caption
+- Facebook caption
+- YouTube title
+- YouTube description
+- hashtags
+- package metadata
 
 ## Editing Pipeline Stub Status
 

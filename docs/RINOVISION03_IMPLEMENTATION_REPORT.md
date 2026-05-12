@@ -42,14 +42,16 @@
 - Artifact registry persistence under `data/projects/<project_id>/artifacts.json`.
 - Pipeline transition validation.
 - AI Video Maker stub flow from script to raw AI video import for editing.
+- AI Video Creator brief-to-video-substrate flow with local stub provider and dry-run OpenAI provider adapter.
 - Editing stub flow from probe report to edit plan, edited placeholder, and export package.
 - Healthcheck report generation.
-- `main.py --healthcheck`, `--safe-mode`, `--ai-video-demo`, and `--editing-demo`.
+- `main.py --healthcheck`, `--safe-mode`, `--ai-video-demo`, `--ai-video-creator-demo`, and `--editing-demo`.
 - Foundation-only compile validation with `python -m compileall rinovision scripts tests`.
 
 ## What Is Stubbed
 
 - External AI video providers.
+- OpenAI video provider is dry-run only.
 - OpenAI assistant behavior when no `OPENAI_API_KEY` exists.
 - Raw AI video generation.
 - Basic edit rendering.
@@ -62,6 +64,7 @@
 - Configured modern test collection with `pytest.ini`.
 - Final modern test run: `9 passed in 5.80s`.
 - Hardening test run: `9 passed in 0.47s`.
+- AI Video Creator test run: modern suite expanded to cover local stub flow, dry-run OpenAI provider, editing import, social package draft, healthcheck reporting, and secret hygiene.
 
 ## Compile Status
 
@@ -88,5 +91,10 @@ pytest -q
 python main.py --healthcheck
 python main.py --safe-mode
 python main.py --ai-video-demo
+python main.py --ai-video-creator-demo
 python main.py --editing-demo
 ```
+
+## AI Video Creator Notes
+
+`rinovision/ai_video_creator/` is a dedicated creator pipeline. It writes runtime artifacts under `data/ai_video_creator/`, never writes generated media into `assets/`, source folders, or the project root, and treats raw AI video as audiovisual substrate. Social package files are draft text/json artifacts for manual upload only; no auto-publishing is implemented.

@@ -26,6 +26,17 @@ data/exports/
 data/edited_videos/
 data/ai_video/generated_raw/
 data/ai_video/provider_responses/
+data/ai_video_creator/briefs/*.json
+data/ai_video_creator/scripts/*.json
+data/ai_video_creator/storyboards/*.json
+data/ai_video_creator/prompts/*.json
+data/ai_video_creator/jobs/*.json
+data/ai_video_creator/provider_requests/*.json
+data/ai_video_creator/provider_responses/*.json
+data/ai_video_creator/downloaded_raw/
+data/ai_video_creator/import_reports/*.json
+data/ai_video_creator/social_packages/
+data/ai_video_creator/reports/*.json
 
 !data/**/.gitkeep
 

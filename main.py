@@ -36,6 +36,11 @@ def parse_args(argv=None):
         action="store_true",
         help="run the editing pipeline stub flow",
     )
+    parser.add_argument(
+        "--ai-video-creator-demo",
+        action="store_true",
+        help="run the AI Video Creator brief-to-editing local stub flow",
+    )
     return parser.parse_args(argv)
 
 
@@ -106,6 +111,23 @@ def run_editing_demo():
     print(f"export_package: {package.path}")
     return 0
 
+
+def run_ai_video_creator_demo():
+    from rinovision.ai_video_creator import run_ai_video_creator_flow
+
+    result = run_ai_video_creator_flow()
+    project = result["project"]
+    job = result["job"]
+    editing_input = result["artifacts"]["editing_input"]
+    print("AI Video Creator demo complete")
+    print(f"project_id: {project.id}")
+    print(f"job_id: {job.id}")
+    print(f"status: {project.status}")
+    print(f"raw_video_path: {job.raw_video_path}")
+    print(f"editing_input: {editing_input.path}")
+    print(f"social_package_path: {result['social_package_path']}")
+    return 0
+
 if __name__ == "__main__":
     args = parse_args()
     if args.healthcheck:
@@ -114,6 +136,8 @@ if __name__ == "__main__":
         sys.exit(run_ai_video_demo())
     if args.editing_demo:
         sys.exit(run_editing_demo())
+    if args.ai_video_creator_demo:
+        sys.exit(run_ai_video_creator_demo())
     if args.safe_foundation or args.safe_mode:
         from rinovision.ui.main_window_adapter import launch_safe_mode
 

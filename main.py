@@ -52,6 +52,21 @@ def parse_args(argv=None):
         help="open a live read-only webcam preview window",
     )
     parser.add_argument(
+        "--studio-composer",
+        action="store_true",
+        help="open the RinoVision Studio Composer window",
+    )
+    parser.add_argument(
+        "--studio-composer-demo-layout",
+        action="store_true",
+        help="create a Studio Composer demo layout JSON without opening GUI",
+    )
+    parser.add_argument(
+        "--studio-composer-demo-multilayer",
+        action="store_true",
+        help="create a multilayer Studio Composer demo scene without opening GUI",
+    )
+    parser.add_argument(
         "--camera-id",
         type=int,
         default=0,
@@ -182,6 +197,36 @@ def run_webcam_preview(camera_id: int = 0):
         print(error)
     return 1
 
+
+def run_studio_composer():
+    from rinovision.studio_composer.ui.studio_window import launch_studio_composer
+
+    return launch_studio_composer()
+
+
+def run_studio_composer_demo_layout():
+    from rinovision.studio_composer import create_demo_layout
+
+    result = create_demo_layout()
+    print("Studio Composer demo layout complete")
+    print(f"project_id: {result['project_id']}")
+    print(f"layout_path: {result['layout_path']}")
+    print("locked: true")
+    print("recording: not enabled")
+    return 0
+
+
+def run_studio_composer_demo_multilayer():
+    from rinovision.studio_composer import create_demo_multilayer
+
+    result = create_demo_multilayer()
+    print("Studio Composer multilayer demo complete")
+    print(f"project_id: {result['project_id']}")
+    print(f"layout_path: {result['layout_path']}")
+    print(f"layer_count: {result['layer_count']}")
+    print("recording: not enabled")
+    return 0
+
 if __name__ == "__main__":
     args = parse_args()
     if args.healthcheck:
@@ -196,6 +241,12 @@ if __name__ == "__main__":
         sys.exit(run_webcam_probe())
     if args.webcam_preview:
         sys.exit(run_webcam_preview(args.camera_id))
+    if args.studio_composer_demo_layout:
+        sys.exit(run_studio_composer_demo_layout())
+    if args.studio_composer_demo_multilayer:
+        sys.exit(run_studio_composer_demo_multilayer())
+    if args.studio_composer:
+        sys.exit(run_studio_composer())
     if args.safe_foundation or args.safe_mode:
         from rinovision.ui.main_window_adapter import launch_safe_mode
 

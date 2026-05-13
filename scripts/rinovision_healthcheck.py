@@ -117,6 +117,48 @@ def ai_video_creator_capability() -> dict:
     }
 
 
+def studio_composer_capability() -> dict:
+    package_status = import_status("rinovision.studio_composer")
+    model_status = import_status("rinovision.studio_composer.models")
+    media_loader_status = import_status("rinovision.studio_composer.media_loader")
+    video_preview_status = import_status("rinovision.studio_composer.video_preview")
+    ui_status = import_status("rinovision.studio_composer.ui.studio_window")
+    storage_status = {"ok": False}
+    try:
+        from rinovision.studio_composer.storage import get_studio_root, studio_path
+
+        root = get_studio_root()
+        storage_status = {
+            "ok": True,
+            "root": str(root),
+            "uploads": studio_path("uploads").exists(),
+            "layouts": studio_path("layouts").exists(),
+            "previews": studio_path("previews").exists(),
+            "reports": studio_path("reports").exists(),
+        }
+    except Exception as exc:
+        storage_status = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+    qgraphics_support = False
+    if importlib.util.find_spec("PySide6") is not None:
+        try:
+            from PySide6.QtWidgets import QGraphicsView
+
+            qgraphics_support = QGraphicsView is not None
+        except Exception:
+            qgraphics_support = False
+    return {
+        "package_import": package_status,
+        "multilayer_model_import": model_status,
+        "media_loader_import": media_loader_status,
+        "video_preview_import": video_preview_status,
+        "ui_import": ui_status,
+        "storage": storage_status,
+        "pyside6_available": importlib.util.find_spec("PySide6") is not None,
+        "qgraphicsview_available": qgraphics_support,
+        "camera_probe_run": False,
+    }
+
+
 def gitignore_contains(pattern: str) -> bool:
     gitignore = ROOT / ".gitignore"
     return gitignore.exists() and pattern in gitignore.read_text(encoding="utf-8")
@@ -152,6 +194,7 @@ def run_healthcheck() -> dict:
             "webcam": webcam_capability(),
         },
         "ai_video_creator": ai_video_creator_capability(),
+        "studio_composer": studio_composer_capability(),
         "rinovision_import": import_status("rinovision"),
         "env_file_exists": (ROOT / ".env").exists(),
         "env_example_exists": (ROOT / ".env.example").exists(),
@@ -211,6 +254,13 @@ def main() -> int:
     creator = report["ai_video_creator"]
     print(f"ai video creator import: {'yes' if creator['package_import']['ok'] else 'no'}")
     print(f"openai video dry-run: {'yes' if creator['openai_video_provider'].get('dry_run') else 'no'}")
+    studio = report["studio_composer"]
+    print(f"studio composer import: {'yes' if studio['package_import']['ok'] else 'no'}")
+    print(f"studio composer multilayer model: {'yes' if studio['multilayer_model_import']['ok'] else 'no'}")
+    print(f"studio composer media loader: {'yes' if studio['media_loader_import']['ok'] else 'no'}")
+    print(f"studio composer video preview: {'yes' if studio['video_preview_import']['ok'] else 'no'}")
+    print(f"studio composer storage: {'yes' if studio['storage'].get('ok') else 'no'}")
+    print(f"studio composer QGraphicsView: {'yes' if studio.get('qgraphicsview_available') else 'no'}")
     print(f"report: {report['report_path']}")
     return 0
 

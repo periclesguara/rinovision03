@@ -143,6 +143,48 @@ Recovered as the canonical `rinovision.capture.webcam.WebcamPreviewController` l
 
 Healthcheck reports the controller import status and dependency status without probing or opening camera hardware.
 
+## Studio Composer Status
+
+Upgraded. `rinovision/studio_composer/` now supports the pre-recording multilayer composition stage:
+
+- multiple image layers
+- multiple video layers with first-frame preview/placeholder behavior
+- empty canvas fallback
+- independent webcam overlay controller using the existing safe webcam lifecycle
+- selected-layer move/scale/order metadata
+- layout lock/unlock behavior
+- complete scene JSON persistence under `data/studio_composer/layouts/`
+- PySide6 QGraphicsView UI module for manual use
+- headless demo layout commands for tests and CI
+
+No recording was added in this step. Healthcheck imports Studio Composer and verifies storage without opening a GUI or camera.
+
+Manual GUI command:
+
+```bash
+python main.py --studio-composer
+```
+
+Headless command:
+
+```bash
+python main.py --studio-composer-demo-layout
+python main.py --studio-composer-demo-multilayer
+```
+
+Acceptance after Studio Composer:
+
+- `python scripts/rinovision_healthcheck.py`: passed
+- `python -m compileall rinovision scripts tests managers windows`: passed
+- `pytest -q`: 61 passed
+- `python main.py --healthcheck`: passed
+- `python main.py --ai-video-demo`: passed
+- `python main.py --editing-demo`: passed
+- `python main.py --ai-video-creator-demo`: passed
+- `python main.py --webcam-probe`: passed
+- `python main.py --studio-composer-demo-layout`: passed
+- `python main.py --studio-composer-demo-multilayer`: passed
+
 ## Music Manager Import Side Effect
 
 Fixed. `managers/editor_manager/music_manager.py` no longer writes `/mnt/data/music_manager.py` or performs runtime work during import. It now exposes `inserir_musica_de_fundo(...)` as an explicit ffmpeg helper and invokes ffmpeg only when called.

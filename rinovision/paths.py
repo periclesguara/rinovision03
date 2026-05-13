@@ -33,6 +33,10 @@ CATEGORIES = {
     "ai_video_creator/import_reports": "ai_video_creator/import_reports",
     "ai_video_creator/social_packages": "ai_video_creator/social_packages",
     "ai_video_creator/reports": "ai_video_creator/reports",
+    "studio_composer/uploads": "studio_composer/uploads",
+    "studio_composer/layouts": "studio_composer/layouts",
+    "studio_composer/previews": "studio_composer/previews",
+    "studio_composer/reports": "studio_composer/reports",
     "edited_videos": "edited_videos",
     "edit_plans": "edit_plans",
 }

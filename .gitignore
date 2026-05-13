@@ -37,6 +37,14 @@ data/ai_video_creator/downloaded_raw/
 data/ai_video_creator/import_reports/*.json
 data/ai_video_creator/social_packages/
 data/ai_video_creator/reports/*.json
+data/studio_composer/uploads/*
+!data/studio_composer/uploads/.gitkeep
+data/studio_composer/layouts/*
+!data/studio_composer/layouts/.gitkeep
+data/studio_composer/previews/*
+!data/studio_composer/previews/.gitkeep
+data/studio_composer/reports/*
+!data/studio_composer/reports/.gitkeep
 
 !data/**/.gitkeep
 

@@ -14,6 +14,7 @@ Recording is intentionally not part of this module yet.
 - `media_loader.py`: supported upload validation and copying into Studio Composer storage.
 - `video_preview.py`: first-frame preview helper, with ffmpeg as optional runtime dependency.
 - `video_playback.py`: selected-layer play/pause preview helper, with lazy OpenCV use.
+- `webcam_enhancement.py`: real-time webcam brightness, contrast, saturation, gamma placeholder, and mirror helpers.
 - `webcam_overlay.py`: wrapper around `WebcamPreviewController`; no camera opens during import.
 - `controller.py`: headless orchestration, layer operations, z-order, and demo scene creation.
 - `ui/`: optional PySide6 QGraphicsView screen.
@@ -101,10 +102,37 @@ python main.py --studio-composer
 - `Play/Pause` starts or pauses the selected video layer with a controlled QTimer.
 - Layers are selectable and draggable.
 - `Scale +` and `Scale -` resize the selected image, video, or webcam layer.
+- Webcam image controls adjust brightness, contrast, saturation, mirror mode, and reset for the selected webcam layer.
 - Forward/Backward changes selected layer `z_index`.
 - Lock freezes all current layers and saves the scene.
 - Unlock allows editing again.
 - Reset Layer resets only the selected layer transform.
+
+## Webcam Enhancement
+
+The webcam layer stores enhancement settings in layer metadata:
+
+```json
+{
+  "enhancement": {
+    "brightness": 0,
+    "contrast": 1.0,
+    "saturation": 1.0,
+    "gamma": 1.0,
+    "mirror": true
+  }
+}
+```
+
+These adjustments are applied only while the webcam preview is active. They are software-based and cannot fully compensate for poor lighting.
+
+Recommended setup:
+
+- soft front light
+- avoid backlight
+- camera at eye level
+- clean background
+- avoid strong shadows
 
 ## Future Record Step
 

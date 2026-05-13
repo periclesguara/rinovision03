@@ -3,6 +3,7 @@ from pathlib import Path
 
 from rinovision.studio_composer.models import ComposerLayer, ComposerLayout, StudioComposerScene, utc_now
 from rinovision.studio_composer.storage import safe_path, studio_path, write_json
+from rinovision.studio_composer.webcam_enhancement import default_webcam_enhancement
 
 
 def create_empty_layout(project_id: str | None = None) -> ComposerLayout:
@@ -67,10 +68,14 @@ def set_webcam_layer(
     layer.enabled = enabled
     layer.camera_id = camera_id
     layer.mode = mode
+    layer.metadata.setdefault("enhancement", default_webcam_enhancement())
     layer.x = x
     layer.y = y
     layer.width = width
     layer.height = height
+    layer.metadata["frame_width"] = width
+    layer.metadata["frame_height"] = height
+    layer.metadata["stable_frame_size"] = True
     layer.z_index = max(layer.z_index, 99)
     scene.selected_layer_id = layer.id
     scene.updated_at = utc_now()

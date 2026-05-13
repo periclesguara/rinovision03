@@ -164,3 +164,5 @@ python main.py --studio-composer
 ```
 
 The demo layout commands are headless and safe for CI. The GUI command opens the PySide6 Studio Composer window. Image/video uploads are copied into `data/studio_composer/uploads/`; video layers show a first-frame preview and can be played/paused with the selected-layer `Play/Pause` control. This module does not record video yet; it saves layout metadata under `data/studio_composer/layouts/`. Webcam preview still follows the controlled lifecycle and opens only after the user enables it in the composer.
+
+Webcam enhancement controls are available for the selected webcam layer: `Bright +`, `Bright -`, `Contrast +`, `Contrast -`, `Sat +`, `Sat -`, `Mirror`, and `Reset Cam`. These are software adjustments. Lighting still matters: use soft front light, avoid backlight, keep the camera near eye level, use a clean background, and avoid strong shadows.

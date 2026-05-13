@@ -152,7 +152,18 @@ class StudioComposerScene:
             height=240,
             z_index=99,
             visible=False,
-            metadata={"camera_id": 0, "mode": "free_floating", "enabled": False},
+            metadata={
+                "camera_id": 0,
+                "mode": "free_floating",
+                "enabled": False,
+                "enhancement": {
+                    "brightness": 0,
+                    "contrast": 1.0,
+                    "saturation": 1.0,
+                    "gamma": 1.0,
+                    "mirror": True,
+                },
+            },
         )
         self.layers.append(layer)
         return layer

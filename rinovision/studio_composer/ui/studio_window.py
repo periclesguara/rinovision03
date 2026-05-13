@@ -13,6 +13,7 @@ from rinovision.studio_composer.ui.inspector_panel import InspectorPanel
 from rinovision.studio_composer.ui.layer_items import require_pyside
 from rinovision.studio_composer.video_playback import VideoLayerPlayer
 from rinovision.studio_composer.video_preview import create_video_preview_frame
+from rinovision.studio_composer.webcam_enhancement import apply_webcam_enhancement, default_webcam_enhancement
 from rinovision.studio_composer.webcam_overlay import WebcamOverlayController
 
 
@@ -30,6 +31,7 @@ class StudioComposerWindow(QWidget if QWidget else object):
         self.video_timer.timeout.connect(self.update_video_frames)
         self.video_players = {}
         self.canvas = StudioCanvasView(self)
+        self.canvas.movement_callback = self.on_layer_moved
         self.inspector = InspectorPanel(self)
         self._build_ui()
         self.canvas.scene.selectionChanged.connect(self.on_selection_changed)
@@ -44,6 +46,14 @@ class StudioComposerWindow(QWidget if QWidget else object):
             ("Upload Video", self.upload_videos),
             ("Play/Pause", self.toggle_selected_video_playback),
             ("Webcam", self.toggle_webcam),
+            ("Bright +", self.webcam_brightness_up),
+            ("Bright -", self.webcam_brightness_down),
+            ("Contrast +", self.webcam_contrast_up),
+            ("Contrast -", self.webcam_contrast_down),
+            ("Sat +", self.webcam_saturation_up),
+            ("Sat -", self.webcam_saturation_down),
+            ("Mirror", self.toggle_webcam_mirror),
+            ("Reset Cam", self.reset_webcam_image),
             ("Scale +", self.scale_selected_up),
             ("Scale -", self.scale_selected_down),
             ("Forward", self.bring_selected_forward),
@@ -148,14 +158,26 @@ class StudioComposerWindow(QWidget if QWidget else object):
         layer = self.controller.scene.webcam_layer
         cv2 = self.webcam.preview._cv2
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_rgb = apply_webcam_enhancement(frame_rgb, layer.metadata.get("enhancement"))
         self.canvas.set_webcam_frame(layer, frame_rgb)
-        self._refresh_inspector(layer.id)
 
     def on_selection_changed(self):
         layer_id = self.canvas.selected_layer_id()
         if layer_id:
             self.controller.select_layer(layer_id)
         self._refresh_inspector(layer_id)
+
+    def on_layer_moved(self, layer_id: str, x: float, y: float):
+        try:
+            self.controller.move_layer(layer_id, x, y)
+        except ValueError:
+            item = self.canvas.items_by_layer_id.get(layer_id)
+            layer = next((candidate for candidate in self.controller.scene.layers if candidate.id == layer_id), None)
+            if item is not None and layer is not None:
+                item.setPos(layer.x, layer.y)
+            return
+        if self.controller.scene.selected_layer_id == layer_id:
+            self._refresh_inspector(layer_id)
 
     def bring_selected_forward(self):
         layer_id = self.canvas.selected_layer_id()
@@ -178,6 +200,60 @@ class StudioComposerWindow(QWidget if QWidget else object):
 
     def scale_selected_down(self):
         self.scale_selected(0.9)
+
+    def _selected_webcam_layer(self):
+        layer_id = self.canvas.selected_layer_id() or self.controller.scene.webcam_layer.id
+        layer = next((item for item in self.controller.scene.layers if item.id == layer_id), None)
+        if layer is None or layer.layer_type != "webcam":
+            return None
+        layer.metadata.setdefault("enhancement", default_webcam_enhancement())
+        return layer
+
+    def _adjust_webcam_enhancement(self, key: str, delta: float, min_value=None, max_value=None):
+        layer = self._selected_webcam_layer()
+        if layer is None:
+            return
+        enhancement = layer.metadata.setdefault("enhancement", default_webcam_enhancement())
+        value = float(enhancement.get(key, default_webcam_enhancement()[key])) + delta
+        if min_value is not None:
+            value = max(min_value, value)
+        if max_value is not None:
+            value = min(max_value, value)
+        enhancement[key] = round(value, 3)
+        self._refresh_inspector(layer.id)
+
+    def webcam_brightness_up(self):
+        self._adjust_webcam_enhancement("brightness", 10, -100, 100)
+
+    def webcam_brightness_down(self):
+        self._adjust_webcam_enhancement("brightness", -10, -100, 100)
+
+    def webcam_contrast_up(self):
+        self._adjust_webcam_enhancement("contrast", 0.1, 0.1, 3.0)
+
+    def webcam_contrast_down(self):
+        self._adjust_webcam_enhancement("contrast", -0.1, 0.1, 3.0)
+
+    def webcam_saturation_up(self):
+        self._adjust_webcam_enhancement("saturation", 0.1, 0.0, 3.0)
+
+    def webcam_saturation_down(self):
+        self._adjust_webcam_enhancement("saturation", -0.1, 0.0, 3.0)
+
+    def toggle_webcam_mirror(self):
+        layer = self._selected_webcam_layer()
+        if layer is None:
+            return
+        enhancement = layer.metadata.setdefault("enhancement", default_webcam_enhancement())
+        enhancement["mirror"] = not bool(enhancement.get("mirror", True))
+        self._refresh_inspector(layer.id)
+
+    def reset_webcam_image(self):
+        layer = self._selected_webcam_layer()
+        if layer is None:
+            return
+        layer.metadata["enhancement"] = default_webcam_enhancement()
+        self._refresh_inspector(layer.id)
 
     def scale_selected(self, factor: float):
         layer_id = self.canvas.selected_layer_id()
@@ -240,6 +316,7 @@ class StudioComposerWindow(QWidget if QWidget else object):
                 "visible": layer.visible,
                 "locked": layer.locked or self.controller.scene.locked,
                 "playback": layer.metadata.get("playback", "-"),
+                **layer.metadata.get("enhancement", {}),
             }
         )
 

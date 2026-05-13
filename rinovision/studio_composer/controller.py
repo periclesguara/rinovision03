@@ -67,6 +67,7 @@ class StudioComposerController:
         self._ensure_editable(layer)
         layer.x = x
         layer.y = y
+        layer.metadata["updated_at"] = utc_now()
         self.scene.updated_at = utc_now()
         return layer
 
@@ -75,6 +76,7 @@ class StudioComposerController:
         self._ensure_editable(layer)
         layer.width = width
         layer.height = height
+        layer.metadata["updated_at"] = utc_now()
         self.scene.updated_at = utc_now()
         return layer
 
@@ -82,6 +84,7 @@ class StudioComposerController:
         layer = get_layer(self.scene, layer_id)
         self._ensure_editable(layer)
         layer.scale = scale
+        layer.metadata["updated_at"] = utc_now()
         self.scene.updated_at = utc_now()
         return layer
 

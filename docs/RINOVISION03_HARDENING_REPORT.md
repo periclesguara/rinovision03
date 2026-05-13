@@ -151,6 +151,7 @@ Upgraded. `rinovision/studio_composer/` now supports the pre-recording multilaye
 - multiple video layers with first-frame preview plus selected-layer play/pause
 - empty canvas fallback
 - independent webcam overlay controller using the existing safe webcam lifecycle
+- webcam enhancement settings for brightness, contrast, saturation, mirror, gamma placeholder, and reset
 - selected-layer move/scale/order metadata
 - layout lock/unlock behavior
 - complete scene JSON persistence under `data/studio_composer/layouts/`
@@ -158,6 +159,8 @@ Upgraded. `rinovision/studio_composer/` now supports the pre-recording multilaye
 - headless demo layout commands for tests and CI
 
 No recording was added in this step. Healthcheck imports Studio Composer and verifies storage without opening a GUI or camera.
+
+Webcam enhancement is software-based. It helps tune the preview, but good lighting remains important: soft front light, no backlight, camera at eye level, clean background, and reduced shadows.
 
 Manual GUI command:
 

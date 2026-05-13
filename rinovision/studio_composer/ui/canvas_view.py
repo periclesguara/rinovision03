@@ -19,6 +19,7 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         self.setSceneRect(0, 0, 1280, 720)
         self.setBackgroundBrush(QColor(18, 20, 24))
         self.items_by_layer_id = {}
+        self.movement_callback = None
         self.fitInView(self.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
     def resizeEvent(self, event):
@@ -27,7 +28,7 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
 
     def add_layer_pixmap(self, layer, pixmap):
         pixmap = self._fit_pixmap_to_layer(pixmap, layer)
-        item = MovablePixmapItem(pixmap, layer_id=layer.id, layer_name=layer.name)
+        item = MovablePixmapItem(pixmap, layer_id=layer.id, layer_name=layer.name, movement_callback=self.movement_callback)
         self._configure_item(item, layer)
         self.scene.addItem(item)
         self.items_by_layer_id[layer.id] = item
@@ -41,7 +42,13 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         return pixmap.scaled(target_width, target_height, Qt.AspectRatioMode.KeepAspectRatio)
 
     def add_placeholder_layer(self, layer):
-        item = PlaceholderLayerItem(width=int(layer.width), height=int(layer.height), layer_id=layer.id, layer_name=layer.name)
+        item = PlaceholderLayerItem(
+            width=int(layer.width),
+            height=int(layer.height),
+            layer_id=layer.id,
+            layer_name=layer.name,
+            movement_callback=self.movement_callback,
+        )
         self._configure_item(item, layer)
         self.scene.addItem(item)
         self.items_by_layer_id[layer.id] = item
@@ -60,7 +67,8 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         height, width, channels = frame.shape
         bytes_per_line = channels * width
         image = QImage(frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
-        pixmap = QPixmap.fromImage(image).scaled(int(layer.width), int(layer.height), Qt.AspectRatioMode.KeepAspectRatio)
+        target_width, target_height = self._stable_frame_size(layer)
+        pixmap = QPixmap.fromImage(image).scaled(target_width, target_height, Qt.AspectRatioMode.KeepAspectRatio)
         item = self.items_by_layer_id.get(layer.id)
         if item is None:
             item = self.add_layer_pixmap(layer, pixmap)
@@ -71,12 +79,19 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         height, width, channels = frame.shape
         bytes_per_line = channels * width
         image = QImage(frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
-        pixmap = QPixmap.fromImage(image).scaled(int(layer.width), int(layer.height), Qt.AspectRatioMode.KeepAspectRatio)
+        target_width, target_height = self._stable_frame_size(layer)
+        pixmap = QPixmap.fromImage(image).scaled(target_width, target_height, Qt.AspectRatioMode.KeepAspectRatio)
         item = self.items_by_layer_id.get(layer.id)
         if item is None:
             self.add_layer_pixmap(layer, pixmap)
         else:
             item.setPixmap(pixmap)
+
+    def _stable_frame_size(self, layer) -> tuple[int, int]:
+        metadata = getattr(layer, "metadata", {})
+        width = metadata.get("frame_width", layer.width)
+        height = metadata.get("frame_height", layer.height)
+        return max(1, int(width)), max(1, int(height))
 
     def selected_layer_id(self):
         selected = self.scene.selectedItems()
@@ -91,8 +106,9 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         rect = item.boundingRect()
         layer.x = item.x()
         layer.y = item.y()
-        layer.width = rect.width()
-        layer.height = rect.height()
+        if not layer.metadata.get("stable_frame_size"):
+            layer.width = rect.width()
+            layer.height = rect.height()
         layer.scale = item.scale()
         layer.rotation = item.rotation()
         layer.z_index = int(item.zValue())

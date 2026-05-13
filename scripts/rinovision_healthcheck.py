@@ -71,14 +71,24 @@ def music_manager_capability() -> dict:
 
 def webcam_capability() -> dict:
     try:
-        from rinovision.capture.webcam import WebcamCaptureAdapter
+        from rinovision.capture.webcam import WebcamCaptureAdapter, WebcamPreviewController, check_webcam_dependencies
 
         adapter = WebcamCaptureAdapter()
         adapter_status = adapter.status()
+        preview_dependencies = check_webcam_dependencies()
+        controller_import = {"ok": True, "class": WebcamPreviewController.__name__}
     except Exception as exc:
         adapter_status = {"available": False, "import_error": f"{type(exc).__name__}: {exc}"}
+        preview_dependencies = {"available": False, "message": f"{type(exc).__name__}: {exc}"}
+        controller_import = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
     return {
         "adapter_status": adapter_status,
+        "preview_controller_import": controller_import,
+        "preview_dependencies": preview_dependencies,
+        "cv2_available": importlib.util.find_spec("cv2") is not None,
+        "mediapipe_available": importlib.util.find_spec("mediapipe") is not None,
+        "pyside6_available": importlib.util.find_spec("PySide6") is not None,
+        "hardware_probe_run": False,
         "legacy_manager_imports": {
             "managers.webcam_manager": import_status("managers.webcam_manager"),
             "managers.webcam_manager_refactorv1": import_status("managers.webcam_manager_refactorv1"),
@@ -187,8 +197,15 @@ def main() -> int:
     print(f"compile ok: {'yes' if report['compile']['ok'] else 'no'}")
     music = report["media_adapters"]["music_manager"]
     webcam = report["media_adapters"]["webcam"]["adapter_status"]
+    webcam_preview = report["media_adapters"]["webcam"]["preview_dependencies"]
     print(f"music manager import: {'yes' if music['import_ok'] else 'no'}")
     print(f"webcam adapter available: {'yes' if webcam.get('available') else 'no'}")
+    print(f"webcam preview dependency: {'yes' if webcam_preview.get('available') else 'no'}")
+    print(f"cv2 available: {'yes' if report['media_adapters']['webcam'].get('cv2_available') else 'no'}")
+    print(f"mediapipe available: {'yes' if report['media_adapters']['webcam'].get('mediapipe_available') else 'no'}")
+    print(f"PySide6 available: {'yes' if report['media_adapters']['webcam'].get('pyside6_available') else 'no'}")
+    controller = report["media_adapters"]["webcam"].get("preview_controller_import", {})
+    print(f"webcam controller import: {'yes' if controller.get('ok') else 'no'}")
     if webcam.get("missing_dependencies"):
         print(f"webcam missing dependencies: {', '.join(webcam['missing_dependencies'])}")
     creator = report["ai_video_creator"]

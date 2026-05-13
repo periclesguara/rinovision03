@@ -43,6 +43,8 @@
 - After the music manager hardening: `pytest -q` reports `12 passed in 0.48s`.
 - After the webcam import-safety hardening: `pytest -q` reports `16 passed in 0.82s`.
 - After the AI Video Creator module: `pytest -q` reports `24 passed`.
+- After the webcam preview CLI: `pytest -q` reports `29 passed`.
+- After the stable webcam lifecycle controller: lifecycle tests pass and the modern suite validates controller start/read/stop behavior without real hardware.
 
 ## Tests Failed
 
@@ -57,6 +59,7 @@
 - `python main.py --ai-video-demo`: passed
 - `python main.py --ai-video-creator-demo`: passed
 - `python main.py --editing-demo`: passed
+- `python main.py --webcam-probe`: passed
 - `python main.py --safe-mode`: passed with CLI fallback because GUI dependencies are unavailable in this shell
 - `python -m compileall rinovision scripts tests managers`: passed after the music manager fix
 - `python -m compileall rinovision scripts tests managers windows`: passed after the webcam hardening
@@ -100,12 +103,45 @@ The new adapters catch these failures and expose stub status instead of crashing
 
 Fixed. Webcam managers and webcam windows now import without opening camera hardware, starting GUI timers, importing cv2/mediapipe eagerly, or requiring PySide6 during module import. Runtime webcam use still requires optional dependencies and explicit window/manager instantiation.
 
-Current healthcheck reports:
+Healthcheck reports:
 
 - legacy webcam manager imports: ok
 - legacy webcam window imports: ok
-- webcam adapter availability: false in this shell
-- missing webcam dependencies: `opencv-python`, `numpy`, `mediapipe`
+- webcam adapter availability
+- preview dependency availability
+- `cv2`, `mediapipe`, and `PySide6` availability
+- preview controller import status
+
+## Webcam Preview CLI
+
+Added:
+
+- `python main.py --webcam-probe`
+- `python main.py --webcam-preview`
+- `python main.py --webcam-preview --camera-id 1`
+
+Preview opens camera hardware only when explicitly requested with `--webcam-preview`. Healthcheck does not probe or open camera hardware. Tests monkeypatch the preview path and do not require camera hardware, GUI windows, recording, or real `cv2` access. The preview is read-only and writes no video files; press `Q` or `ESC` to close.
+
+Manual preview test:
+
+```bash
+python main.py --webcam-preview
+python main.py --webcam-preview --camera-id 1
+```
+
+## Stable Webcam Lifecycle
+
+Recovered as the canonical `rinovision.capture.webcam.WebcamPreviewController` lifecycle:
+
+- `__init__()` stores configuration only and does not open hardware.
+- `start()` lazy-loads OpenCV and opens one `VideoCapture`.
+- repeated `start()` calls do not create additional captures.
+- `read_frame()` reads one frame only.
+- `stop()` releases the camera and is idempotent.
+- CLI preview closes on `Q` or `ESC` and releases/destroys windows in cleanup.
+- GUI preview must remain timer/event-driven with `QTimer`; uncontrolled GUI `while True` loops are forbidden.
+
+Healthcheck reports the controller import status and dependency status without probing or opening camera hardware.
 
 ## Music Manager Import Side Effect
 

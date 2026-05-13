@@ -107,33 +107,30 @@ class CompositorWindow(QMainWindow):
     def placeholder_edition(self):
         print("[Editor] Janela de edição ainda não implementada.")
 
-
-if __name__ == "__main__":
-    app = QApplication([])
-    compositor = CompositorWindow()
-    compositor.show()
-    app.exec()
-
     def open_webcam_window(self):
         from windows.webcam_window import WebcamWindow
-from windows.image_composer_window import ImageComposerWindow
 
         self.webcam_window = WebcamWindow()
         self.webcam_window.show()
 
     def open_base_window(self):
         from windows.base_window import BaseWindow
+        from windows.image_composer_window import ImageComposerWindow
 
         self.base_window = BaseWindow()
         self.image_composer_window = ImageComposerWindow()
         self.base_window.show()
 
-
-
-
-
     def open_image_composer(self):
-        if self.image_composer_window is None:
+        from windows.image_composer_window import ImageComposerWindow
+
+        if getattr(self, "image_composer_window", None) is None:
             self.image_composer_window = ImageComposerWindow(self.scene_manager)
         self.image_composer_window.show()
 
+
+if __name__ == "__main__":
+    app = QApplication([])
+    compositor = CompositorWindow()
+    compositor.show()
+    app.exec()

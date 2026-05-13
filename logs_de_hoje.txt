@@ -1,0 +1,1000 @@
+  937  chmod +x check_integrity.sh
+  938  ./check_integrity.sh
+  939  echo "<cole o bloco acima aqui>" > check_integrity.sh
+  940  chmod +x check_integrity.sh
+  941  ./check_integrity.sh
+  942  cat << 'EOF' > check_integrity.sh
+  943  #!/bin/bash
+  944  ARQ="windows/compositor_window.py"
+  945  echo "🔍 Checando integridade de $ARQ..."
+  946  # 1. Importação
+  947  grep -q 'from windows.image_composer_window import ImageComposerWindow' "$ARQ" && \
+  948  echo "✅ Importação do ImageComposerWindow OK" || \
+  949  echo "❌ Importação do ImageComposerWindow FALTANDO"
+  950  # 2. Instanciação
+  951  grep -q 'self.image_composer_window = ImageComposerWindow(self.scene_manager)' "$ARQ" && \
+  952  echo "✅ Instanciação no método OK" || \
+  953  echo "❌ Instanciação da janela FALTANDO"
+  954  # 3. Método open_image_composer
+  955  grep -q 'def open_image_composer(self):' "$ARQ" && \
+  956  echo "✅ Função open_image_composer OK" || \
+  957  echo "❌ Função open_image_composer FALTANDO"
+  958  # 4. Criação do botão
+  959  grep -q 'self.image_composer_btn = self.create_button("🧩 Compositor de Imagens"' "$ARQ" && \
+  960  echo "✅ Criação do botão image_composer_btn OK" || \
+  961  echo "❌ Criação do botão image_composer_btn FALTANDO"
+  962  # 5. Adição ao layout
+  963  grep -q 'self.top_button_layout.addWidget(self.image_composer_btn)' "$ARQ" && \
+  964  echo "✅ Botão adicionado ao layout OK" || \
+  965  echo "❌ Botão adicionado ao layout FALTANDO"
+  966  # 6. Teste de sintaxe
+  967  echo "🧪 Testando se arquivo pode ser interpretado..."
+  968  python3 -m py_compile "$ARQ" && \
+  969  echo "✅ Arquivo compila com sucesso!" || \
+  970  echo "❌ ERRO de sintaxe detectado"
+  971  EOF
+  972  chmod +x check_integrity.sh
+  973  ./check_integrity.sh
+  974  #!/bin/bash
+  975  ARQ="windows/compositor_window.py"
+  976  TMP="tmp_compositor.py"
+  977  echo "🚀 Injetando botão do ImageComposerWindow em $ARQ..."
+  978  # 1. Injeta os blocos no lugar certo
+  979  awk '
+  980  BEGIN {in_ui=0}
+  981  /def init_ui\(self\):/ {in_ui=1}
+  982  in_ui && /self\.top_button_layout\.addWidget\(self\.base_btn\)/ {
+  983      print
+  984      print "        self.image_composer_btn = self.create_button(\"🧩 Compositor de Imagens\", self.open_image_composer)"
+  985      print "        self.top_button_layout.addWidget(self.image_composer_btn)"
+  986      next
+  987  }
+  988  in_ui && /self\.base_window = None/ {
+  989      print
+  990      print "        self.image_composer_window = None"
+  991      next
+  992  }
+  993  {print}
+  994  ' "$ARQ" > "$TMP"
+  995  # 2. Adiciona a função open_image_composer se não existir
+  996  if ! grep -q "def open_image_composer(self):" "$TMP"; then
+  997  cat << 'EOF' >> "$TMP"
+  998      def open_image_composer(self):
+  999          if self.image_composer_window is None:
+ 1000              from windows.image_composer_window import ImageComposerWindow
+ 1001              self.image_composer_window = ImageComposerWindow(self.scene_manager)
+ 1002          self.image_composer_window.show()
+ 1003  EOF
+ 1004   fi
+ 1005  # 3. Formata com black (se instalado)
+ 1006  echo "🎨 Formatando arquivo com Black..."
+ 1007  black "$TMP" --line-length 120
+ 1008  # 4. Substitui o original
+ 1009  mv "$TMP" "$ARQ"
+ 1010  # 5. Teste de integridade
+ 1011  echo "🔍 Checando integridade final..."
+ 1012  grep -q 'from windows.image_composer_window import ImageComposerWindow' "$ARQ" && echo "✅ Importação OK" || echo "❌ Faltando importação"
+ 1013  grep -q 'self.image_composer_window = ImageComposerWindow(self.scene_manager)' "$ARQ" && echo "✅ Instanciação OK" || echo "❌ Faltando instanciação"
+ 1014  grep -q 'def open_image_composer(self):' "$ARQ" && echo "✅ Função open_image_composer OK" || echo "❌ Faltando função open_image_composer"
+ 1015  grep -q 'self.image_composer_btn = self.create_button("🧩 Compositor de Imagens"' "$ARQ" && echo "✅ Botão criado OK" || echo "❌ Faltando criação do botão"
+ 1016  grep -q 'self.top_button_layout.addWidget(self.image_composer_btn)' "$ARQ" && echo "✅ Botão adicionado ao layout OK" || echo "❌ Faltando adicionar ao layout"
+ 1017  # 6. Testa se o Python interpreta
+ 1018  echo "🧪 Validando sintaxe com Python..."
+ 1019  python3 -m py_compile "$ARQ" && echo "✅ Sintaxe OK" || echo "❌ ERRO de sintaxe"
+ 1020  #!/bin/bash
+ 1021  ARQ="windows/compositor_window.py"
+ 1022  TMP="tmp_compositor.py"
+ 1023  echo "🚀 Injetando botão do ImageComposerWindow em $ARQ..."
+ 1024  # 1. Injeta as linhas necessárias no ponto certo do init_ui
+ 1025  awk '
+ 1026  BEGIN {in_ui=0}
+ 1027  /def init_ui\(self\):/ {in_ui=1}
+ 1028  in_ui && /self\.base_window = None/ {
+ 1029      print
+ 1030      print "        self.image_composer_window = None"
+ 1031      next
+ 1032  }
+ 1033  in_ui && /self\.top_button_layout\.addWidget\(self\.base_btn\)/ {
+ 1034      print
+ 1035      print "        self.image_composer_btn = self.create_button(\"🧩 Compositor de Imagens\", self.open_image_composer)"
+ 1036      print "        self.top_button_layout.addWidget(self.image_composer_btn)"
+ 1037      next
+ 1038  }
+ 1039  {print}
+ 1040  ' "$ARQ" > "$TMP"
+ 1041  # 2. Injeta função se não existir
+ 1042  if ! grep -q "def open_image_composer(self):" "$TMP"; then
+ 1043  cat << 'EOF' >> "$TMP"
+ 1044      def open_image_composer(self):
+ 1045          if self.image_composer_window is None:
+ 1046              from windows.image_composer_window import ImageComposerWindow
+ 1047              self.image_composer_window = ImageComposerWindow(self.scene_manager)
+ 1048          self.image_composer_window.show()
+ 1049  EOF
+ 1050   fi
+ 1051  # 3. Formata com Black
+ 1052  echo "🎨 Formatando com Black..."
+ 1053  black "$TMP" --line-length 120
+ 1054  # 4. Move arquivo formatado para o lugar
+ 1055  mv "$TMP" "$ARQ"
+ 1056  # 5. Verificações
+ 1057  echo "🔍 Checando integridade final..."
+ 1058  grep -q 'from windows.image_composer_window import ImageComposerWindow' "$ARQ" && echo "✅ Importação OK" || echo "❌ Faltando importação"
+ 1059  grep -q 'self.image_composer_window = ImageComposerWindow(self.scene_manager)' "$ARQ" && echo "✅ Instanciação OK" || echo "❌ Faltando instanciação"
+ 1060  grep -q 'def open_image_composer(self):' "$ARQ" && echo "✅ Função open_image_composer OK" || echo "❌ Faltando função open_image_composer"
+ 1061  grep -q 'self.image_composer_btn = self.create_button("🧩 Compositor de Imagens"' "$ARQ" && echo "✅ Botão criado OK" || echo "❌ Faltando criação do botão"
+ 1062  grep -q 'self.top_button_layout.addWidget(self.image_composer_btn)' "$ARQ" && echo "✅ Botão adicionado ao layout OK" || echo "❌ Faltando adicionar ao layout"
+ 1063  # 6. Testa sintaxe final
+ 1064  echo "🧪 Validando sintaxe com Python..."
+ 1065  python3 -m py_compile "$ARQ" && echo "✅ Sintaxe OK" || echo "❌ ERRO de sintaxe"
+ 1066  nano windows/compositor_window.py
+ 1067  python3 -m py_compile windows/compositor_window.py
+ 1068  sed -i 's/\t/    /g' windows/compositor_window.py
+ 1069  cat -n windows/compositor_window.py | sed -n '120,135p'
+ 1070  #!/bin/bash
+ 1071  ARQ="windows/compositor_window.py"
+ 1072  TMP="tmp_fix_compositor.py"
+ 1073  echo "🚨 Limpando erros e refatorando $ARQ..."
+ 1074  # 1. Remove linhas com [AUTO-INSERT] duplicadas e mal posicionadas
+ 1075  sed '/# \[AUTO-INSERT\]/d' "$ARQ" > "$TMP"
+ 1076  # 2. Remove import mal indentado, se estiver fora do topo
+ 1077  sed -i '/^ *from windows\.image_composer_window import ImageComposerWindow$/d' "$TMP"
+ 1078  # 3. Reinsere import corretamente no topo (depois dos outros imports da pasta windows)
+ 1079  awk '
+ 1080  /from windows\.webcam_window import WebcamWindow/ {
+ 1081      print
+ 1082      print "from windows.image_composer_window import ImageComposerWindow"
+ 1083      next
+ 1084  }
+ 1085  { print }
+ 1086  ' "$TMP" > "$ARQ"
+ 1087  # 4. Corrige a função open_image_composer, se estiver mal formatada
+ 1088  # Remove completamente a versão quebrada
+ 1089  sed -i '/def open_image_composer/,/self\.image_composer_window\.show()/d' "$ARQ"
+ 1090  # 5. Adiciona a versão correta no final do arquivo
+ 1091  cat << 'EOF' >> "$ARQ"
+ 1092      def open_image_composer(self):
+ 1093          if self.image_composer_window is None:
+ 1094              self.image_composer_window = ImageComposerWindow(self.scene_manager)
+ 1095          self.image_composer_window.show()
+ 1096  EOF
+ 1097  # 6. Valida sintaxe
+ 1098  echo "🧪 Validando sintaxe..."
+ 1099  python3 -m py_compile "$ARQ" && echo "✅ Sintaxe OK" || echo "❌ ERRO de sintaxe em $ARQ"
+ 1100  # 7. Teste de integridade
+ 1101  echo "🔍 Teste de integridade..."
+ 1102  grep -q 'from windows.image_composer_window import ImageComposerWindow' "$ARQ" && echo "✅ Importação OK" || echo "❌ Importação FALTANDO"
+ 1103  grep -q 'self.image_composer_window = ImageComposerWindow(self.scene_manager)' "$ARQ" && echo "✅ Instanciação OK" || echo "❌ Instanciação FALTANDO"
+ 1104  grep -q 'def open_image_composer(self):' "$ARQ" && echo "✅ Método open_image_composer OK" || echo "❌ Método open_image_composer FALTANDO"
+ 1105  grep -q 'self.image_composer_btn = self.create_button("🧩 Compositor de Imagens"' "$ARQ" && echo "✅ Botão image_composer_btn OK" || echo "❌ Botão FALTANDO"
+ 1106  chmod +x fix_compositor.sh
+ 1107  ./fix_compositor.sh
+ 1108  nano fix_compositor.sh
+ 1109  # cola o código e salva com Ctrl+O, Enter, depois Ctrl+X
+ 1110  chmod +x fix_compositor.sh
+ 1111  ./fix_compositor.sh
+ 1112  #!/bin/bash
+ 1113  ARQ="windows/compositor_window.py"
+ 1114  TMP="tmp_fix_compositor.py"
+ 1115  echo "🚨 Corrigindo tudo em $ARQ..."
+ 1116  # 1. Remove linhas quebradas e lixo automático
+ 1117  sed '/# \[AUTO-INSERT\]/d' "$ARQ" > "$TMP"
+ 1118  # 2. Remove imports duplicados ou indentados errado
+ 1119  sed -i '/^[[:space:]]*from windows\.image_composer_window import ImageComposerWindow/d' "$TMP"
+ 1120  # 3. Reinsere import corretamente após webcam_window
+ 1121  awk '
+ 1122  /from windows\.webcam_window import WebcamWindow/ {
+ 1123      print
+ 1124      print "from windows.image_composer_window import ImageComposerWindow"
+ 1125      next
+ 1126  }
+ 1127  { print }
+ 1128  ' "$TMP" > "$ARQ"
+ 1129  # 4. Remove função quebrada se existir
+ 1130  sed -i '/def open_image_composer/,/^$/d' "$ARQ"
+ 1131  # 5. Insere função correta no final
+ 1132  cat << 'EOF' >> "$ARQ"
+ 1133      def open_image_composer(self):
+ 1134          if self.image_composer_window is None:
+ 1135              self.image_composer_window = ImageComposerWindow(self.scene_manager)
+ 1136          self.image_composer_window.show()
+ 1137  EOF
+ 1138  # 6. Garante que a variável está inicializada
+ 1139  sed -i '/self\.base_window = None/a \        self.image_composer_window = None' "$ARQ"
+ 1140  # 7. Adiciona o botão no lugar certo
+ 1141  awk '
+ 1142  /self\.top_button_layout\.addWidget\(self\.base_btn\)/ {
+ 1143      print
+ 1144      print "        self.image_composer_btn = self.create_button(\"🧩 Compositor de Imagens\", self.open_image_composer, primary=True)"
+ 1145      print "        self.top_button_layout.addWidget(self.image_composer_btn)"
+ 1146      next
+ 1147  }
+ 1148  { print }
+ 1149  ' "$ARQ" > "$TMP" && mv "$TMP" "$ARQ"
+ 1150  # 8. Teste de sintaxe
+ 1151  echo "🧪 Validando sintaxe..."
+ 1152  python3 -m py_compile "$ARQ" && echo "✅ Sintaxe OK" || echo "❌ ERRO de sintaxe em $ARQ"
+ 1153  # 9. Testes de integridade
+ 1154  echo "🔍 Testando integridade final..."
+ 1155  grep -q 'from windows.image_composer_window import ImageComposerWindow' "$ARQ" && echo "✅ Importação OK" || echo "❌ Importação FALTANDO"
+ 1156  grep -q 'self.image_composer_window = ImageComposerWindow(self.scene_manager)' "$ARQ" && echo "✅ Instanciação OK" || echo "❌ Instanciação FALTANDO"
+ 1157  grep -q 'def open_image_composer(self):' "$ARQ" && echo "✅ Método open_image_composer OK" || echo "❌ Método open_image_composer FALTANDO"
+ 1158  grep -q 'self.image_composer_btn = self.create_button("🧩 Compositor de Imagens"' "$ARQ" && echo "✅ Botão image_composer_btn OK" || echo "❌ Botão FALTANDO"
+ 1159  #!/bin/bash
+ 1160  ARQ="windows/compositor_window.py"
+ 1161  TMP="tmp_fix_compositor.py"
+ 1162  echo "🚨 Corrigindo tudo em $ARQ..."
+ 1163  # 1. Remove linhas quebradas e lixo automático
+ 1164  sed '/# \[AUTO-INSERT\]/d' "$ARQ" > "$TMP"
+ 1165  # 2. Remove import duplicado ou mal indentado
+ 1166  sed -i '/^[[:space:]]*from windows\.image_composer_window import ImageComposerWindow/d' "$TMP"
+ 1167  # 3. Reinsere import corretamente após webcam_window
+ 1168  awk '
+ 1169  /from windows\.webcam_window import WebcamWindow/ {
+ 1170      print
+ 1171      print "from windows.image_composer_window import ImageComposerWindow"
+ 1172      next
+ 1173  }
+ 1174  { print }
+ 1175  ' "$TMP" > "$ARQ"
+ 1176  # 4. Corrige definição da função open_base se estiver indentada demais
+ 1177  sed -i 's/^ *def open_base(/    def open_base(/' "$ARQ"
+ 1178  sed -i 's/^ *self\.base_window = BaseWindow()/        self.base_window = BaseWindow()/' "$ARQ"
+ 1179  # 5. Garante que o atributo seja inicializado
+ 1180  grep -q 'self\.image_composer_window = None' "$ARQ" || sed -i '/self\.base_window = None/a \        self.image_composer_window = None' "$ARQ"
+ 1181  # 6. Adiciona função open_image_composer (se não tiver)
+ 1182  grep -q 'def open_image_composer(self):' "$ARQ" || cat << 'EOF' >> "$ARQ"
+ 1183      def open_image_composer(self):
+ 1184          if self.image_composer_window is None:
+ 1185              self.image_composer_window = ImageComposerWindow(self.scene_manager)
+ 1186          self.image_composer_window.show()
+ 1187  EOF
+ 1188  # 7. Adiciona botão ao layout
+ 1189  grep -q 'self\.image_composer_btn = self\.create_button("🧩 Compositor de Imagens"' "$ARQ" || awk '
+ 1190  /self\.top_button_layout\.addWidget\(self\.base_btn\)/ {
+ 1191      print
+ 1192      print "        self.image_composer_btn = self.create_button(\"🧩 Compositor de Imagens\", self.open_image_composer, primary=True)"
+ 1193      print "        self.top_button_layout.addWidget(self.image_composer_btn)"
+ 1194      next
+ 1195  }
+ 1196  { print }
+ 1197  ' "$ARQ" > "$TMP" && mv "$TMP" "$ARQ"
+ 1198  # 8. Testa sintaxe
+ 1199  echo "🧪 Validando sintaxe com Python..."
+ 1200  python3 -m py_compile "$ARQ" && echo "✅ Sintaxe OK" || echo "❌ ERRO de sintaxe em $ARQ"
+ 1201  # 9. Testa integridade
+ 1202  echo "🔍 Testando integridade final..."
+ 1203  grep -q 'from windows.image_composer_window import ImageComposerWindow' "$ARQ" && echo "✅ Importação OK" || echo "❌ Importação FALTANDO"
+ 1204  grep -q 'self.image_composer_window = ImageComposerWindow(self.scene_manager)' "$ARQ" && echo "✅ Instanciação OK" || echo "❌ Instanciação FALTANDO"
+ 1205  grep -q 'def open_image_composer(self):' "$ARQ" && echo "✅ Método open_image_composer OK" || echo "❌ Método open_image_composer FALTANDO"
+ 1206  grep -q 'self.image_composer_btn = self.create_button("🧩 Compositor de Imagens"' "$ARQ" && echo "✅ Botão image_composer_btn OK" || echo "❌ Botão FALTANDO"
+ 1207  nano fix_compositor.sh
+ 1208  # cola tudo acima, salva e fecha
+ 1209  chmod +x fix_compositor.sh
+ 1210  ./fix_compositor.sh
+ 1211  cd ~/Projetos/RINOVISION03
+ 1212  # Adiciona todos os arquivos modificados
+ 1213  git add .
+ 1214  # Comenta as mudanças de hoje com detalhes
+ 1215  git commit -m "🚀 Refatoração total do CompositorWindow: limpeza de erros, botão do ImageComposer injetado, teste de integridade validado"
+ 1216  # Log das últimas 24h formatado bonito
+ 1217  git log --since="24 hours ago" --pretty=format:"🕒 %C(yellow)%h %Cgreen%ad %Cblue%an%n📦 %s%n" --date=short > LOG_DO_DIA.txt
+ 1218  # Mostra na tela também se quiser revisar
+ 1219  cat LOG_DO_DIA.txt
+ 1220  # Log das últimas 24h formatado bonito
+ 1221  git log --since="24 hours ago" --pretty=format:"🕒 %C(yellow)%h %Cgreen%ad %Cblue%an%n📦 %s%n" --date=short > LOG_DO_DIA.txt
+ 1222  # Mostra na tela também se quiser revisar
+ 1223  cat LOG_DO_DIA.txt
+ 1224  # Sobe pro branch atual (certifique-se que está no branch certo, tipo main ou dev)
+ 1225  git push
+ 1226  git tag "snapshot-$(date +%F)"
+ 1227  git push origin --tags
+ 1228  source venv/bin/activate
+ 1229  pip install openai
+ 1230  mkdir -p src/components
+ 1231  nano src/components/openai_client.py
+ 1232  nano test_openai.py
+ 1233  python test_openai.py
+ 1234  rm src/components/openai_client.py
+ 1235  nano src/components/openai_client.py
+ 1236  pip install --upgrade openai
+ 1237  nano test_openai.py
+ 1238  python test_openai.py
+ 1239  nano README.md
+ 1240  tree
+ 1241  venv/
+ 1242  __pycache__/
+ 1243  *.pyc
+ 1244  .env
+ 1245  nano .gitignore
+ 1246  git add .gitignore
+ 1247  git rm -r --cached venv/ __pycache__/
+ 1248  git commit -m "🔒 Atualiza .gitignore e remove arquivos ignorados"
+ 1249  git add README.md src/ test_openai.py LOG_DO_DIA.txt
+ 1250  git commit -m "🚀 Integração OpenAI concluída + limpeza do projeto (.gitignore ok)"
+ 1251  git push
+ 1252  nano src/components/openai_client.py
+ 1253  cd src/components/
+ 1254  ls
+ 1255  nano openai_client.py
+ 1256  rm src/components/openai_client.py
+ 1257  mkdir -p src/components  # Garante que o diretório existe
+ 1258  nano src/components/openai_client.py
+ 1259  nano .env
+ 1260  pip install python-dotenv
+ 1261  pip freeze | grep python-dotenv >> requirements.txt
+ 1262  nano test_openai.py
+ 1263  git add .
+ 1264  git commit -m "🔐 Adicionado openai_client seguro com dotenv"
+ 1265  git push
+ 1266  git filter-repo --path src/components/openai_client.py --path .env --invert-paths
+ 1267  cd /usr/local/bin
+ 1268  sudo curl -O https://raw.githubusercontent.com/newren/git-filter-repo/main/git-filter-repo
+ 1269  sudo chmod +x git-filter-repo
+ 1270  git filter-repo --help
+ 1271  cd ~/Projetos/RINOVISION03
+ 1272  git filter-repo --path src/components/openai_client.py --path .env --invert-paths
+ 1273  git filter-repo --force --path src/components/openai_client.py --path .env --invert-paths
+ 1274  git add .
+ 1275  git commit -m "🔥 Histórico limpo com --force: .env e chave OpenAI"
+ 1276  git push --force
+ 1277  cd ~/Projetos/RINOVISION03
+ 1278  git filter-repo --force --path src/components/openai_client.py --path .env --invert-paths
+ 1279  nano .env
+ 1280  mkdir -p src/components
+ 1281  nano src/components/openai_client.py
+ 1282  echo -e "\n.env\n__pycache__/\n*.pyc" >> .gitignore
+ 1283  git add .
+ 1284  git commit -m "🧼 Limpeza de histórico + reimplementação segura com dotenv"
+ 1285  git push --force
+ 1286  git remote add origin https://github.com/periclesguara/rinovision03.git
+ 1287  git push origin main --force
+ 1288  rm -rf .git
+ 1289  git init
+ 1290  git remote add origin https://github.com/periclesguara/rinovision03.git
+ 1291  git add .
+ 1292  git commit -m "🚨 Novo início seguro, sem segredos no histórico"
+ 1293  git branch -M main
+ 1294  git push -u origin main --force
+ 1295  git log --since="2 days ago" --pretty=format:"%C(auto)%h %s (%cr)"
+ 1296  nano src/assistente/contexto_atual.py
+ 1297  mkdir -p src/assistente
+ 1298  touch src/assistente/__init__.py
+ 1299  nano src/assistente/contexto_atual.py
+ 1300  nano test_resumo.py
+ 1301  python test_resumo.py
+ 1302  pip install gitpython
+ 1303  mkdir -p src/assistente/utils
+ 1304  nano src/assistente/utils/carregador_de_projeto.py
+ 1305  rm -rf src/assistente/rino_assistente.py src/assistente/contexto_atualizador.py src/assistente/utils/
+ 1306  mkdir -p src/assistente/utils
+ 1307  touch src/assistente/__init__.py
+ 1308  touch src/assistente/contexto_atualizador.py
+ 1309  touch src/assistente/rino_assistente.py
+ 1310  touch src/assistente/utils/__init__.py
+ 1311  touch src/assistente/utils/carregador_de_projeto.py
+ 1312  cat << 'EOF' > src/assistente/utils/carregador_de_projeto.py
+ 1313  import os
+ 1314  def ler_todos_os_codigos(diretorio='src'):
+ 1315      arquivos = {}
+ 1316      for raiz, _, nomes_arquivos in os.walk(diretorio):
+ 1317          for nome in nomes_arquivos:
+ 1318              if nome.endswith('.py'):
+ 1319                  caminho = os.path.join(raiz, nome)
+ 1320                  with open(caminho, 'r', encoding='utf-8') as f:
+ 1321                      arquivos[caminho] = f.read()
+ 1322      return arquivos
+ 1323  EOF
+ 1324  cat << 'EOF' > src/assistente/contexto_atualizador.py
+ 1325  from src.assistente.utils.carregador_de_projeto import ler_todos_os_codigos
+ 1326  def gerar_contexto_projeto():
+ 1327      arquivos = ler_todos_os_codigos()
+ 1328      blocos = []
+ 1329      for caminho, conteudo in arquivos.items():
+ 1330          if len(conteudo) < 1800:
+ 1331              blocos.append(f"# Arquivo: {caminho}\n{conteudo}\n")
+ 1332      return "\n".join(blocos)
+ 1333  EOF
+ 1334  cat << 'EOF' > src/assistente/rino_assistente.py
+ 1335  import os
+ 1336  from openai import OpenAI
+ 1337  from dotenv import load_dotenv
+ 1338  from src.assistente.contexto_atualizador import gerar_contexto_projeto
+ 1339  load_dotenv()
+ 1340  client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+ 1341  def responder(pergunta: str) -> str:
+ 1342      contexto = gerar_contexto_projeto()
+ 1343      try:
+ 1344          resposta = client.chat.completions.create(
+ 1345              model="gpt-4o",
+ 1346              messages=[
+ 1347                  {"role": "system", "content": f"Você é um dev que conhece esse projeto:\n{contexto}"},
+ 1348                  {"role": "user", "content": pergunta}
+ 1349              ]
+ 1350          )
+ 1351          return resposta.choices[0].message.content
+ 1352      except Exception as e:
+ 1353          return f"[ERRO] {e}"
+ 1354  EOF
+ 1355  cat << 'EOF' > terminal_assistente.py
+ 1356  from src.assistente.rino_assistente import responder
+ 1357  print("🧠 RinoVision Assistente pronto. Digite 'sair' para encerrar.")
+ 1358  while True:
+ 1359      pergunta = input("rino> ")
+ 1360      if pergunta.lower() in ["sair", "exit", "quit"]:
+ 1361          break
+ 1362      print(responder(pergunta))
+ 1363  EOF
+ 1364  python terminal_assistente.py
+ 1365  pip install openai
+ 1366  cd ~/Projetos
+ 1367  zip -r rinovision03.zip RINOVISION03 -x "*/venv/*" "*/__pycache__/*" "*.pyc" ".DS_Store"
+ 1368  cd ~/Projetos
+ 1369  zip -r rinovision03.zip RINOVISION03 -x "*/venv/*" "*/__pycache__/*" "*.pyc" ".DS_Store"
+ 1370  cd ~/Projetos/RINOVISION03
+ 1371  cat << 'EOF' > usar_assistente.py
+ 1372  import openai
+ 1373  client = openai.OpenAI(api_key="REDACTED_OPENAI_KEY")
+ 1374  # Upload do projeto zipado
+ 1375  with open("../rinovision03.zip", "rb") as f:
+ 1376      file = client.files.create(file=f, purpose="assistants")
+ 1377  # Criação do assistente
+ 1378  assistant = client.beta.assistants.create(
+ 1379      name="RinoVision Dev Assistant",
+ 1380      instructions="Você é um engenheiro de software. Analise e melhore o projeto rinovision03.",
+ 1381      model="gpt-4o",
+ 1382      tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
+ 1383      file_ids=[file.id]
+ 1384  )
+ 1385  # Criação de uma thread de conversa
+ 1386  thread = client.beta.threads.create()
+ 1387  # Primeira pergunta enviada
+ 1388  client.beta.threads.messages.create(
+ 1389      thread_id=thread.id,
+ 1390      role="user",
+ 1391      content="Leia o projeto rinovision03 e diga como podemos melhorar a estrutura, boas práticas e funcionalidades."
+ 1392  )
+ 1393  # Executa o assistente
+ 1394  run = client.beta.threads.runs.create(
+ 1395      thread_id=thread.id,
+ 1396      assistant_id=assistant.id
+ 1397  )
+ 1398  print(f"🧠 Assistente iniciado. Thread ID: {thread.id}")
+ 1399  EOF
+ 1400  python usar_assistente.py
+ 1401  nano usar_assistente.py
+ 1402  rm usar_assistente.py
+ 1403  pip install python-dotenv
+ 1404  echo 'OPENAI_API_KEY=REDACTED_OPENAI_KEY' > .env
+ 1405  grep .env .gitignore || echo ".env" >> .gitignore
+ 1406  cat << 'EOF' > usar_assistente.py
+ 1407  import os
+ 1408  from dotenv import load_dotenv
+ 1409  from openai import OpenAI
+ 1410  # Carrega a chave da OpenAI do .env
+ 1411  load_dotenv()
+ 1412  api_key = os.getenv("OPENAI_API_KEY")
+ 1413  client = OpenAI(api_key=api_key)
+ 1414  def perguntar_assistente(mensagem):
+ 1415      resposta = client.chat.completions.create(
+ 1416          model="gpt-4o",
+ 1417          messages=[{"role": "user", "content": mensagem}]
+ 1418      )
+ 1419      return resposta.choices[0].message.content
+ 1420  if __name__ == "__main__":
+ 1421      print("🧠 Assistente RinoVision conectado à API OpenAI.")
+ 1422      while True:
+ 1423          pergunta = input("rino> ")
+ 1424          if pergunta.lower() in ["sair", "exit", "quit"]:
+ 1425              break
+ 1426          print(perguntar_assistente(pergunta))
+ 1427  EOF
+ 1428  python usar_assistente.py
+ 1429  cat << 'EOF' > auditar_projeto.py
+ 1430  import os
+ 1431  from src.assistente.rino_assistente import responder
+ 1432  def listar_arquivos_py(diretorio):
+ 1433      arquivos_py = []
+ 1434      for raiz, _, arquivos in os.walk(diretorio):
+ 1435          for nome in arquivos:
+ 1436              if nome.endswith(".py") and "venv" not in raiz:
+ 1437                  arquivos_py.append(os.path.join(raiz, nome))
+ 1438      return arquivos_py
+ 1439  def ler_conteudo_arquivo(caminho):
+ 1440      with open(caminho, "r", encoding="utf-8") as f:
+ 1441          return f.read()
+ 1442  print("📂 Iniciando auditoria RinoVision nos arquivos .py do projeto...")
+ 1443  arquivos = listar_arquivos_py(".")
+ 1444  for caminho in arquivos:
+ 1445      print(f"\n📄 Analisando: {caminho}")
+ 1446      conteudo = ler_conteudo_arquivo(caminho)
+ 1447      prompt = f"Analise o seguinte código e sugira melhorias, correções e explique o que ele faz:\n\n{conteudo}"
+ 1448      resposta = responder(prompt)
+ 1449      print(f"💬 Assistente: {resposta}")
+ 1450  EOF
+ 1451  python auditar_projeto.py
+ 1452  (venv) pip install tiktoken
+ 1453  pip install tiktoken
+ 1454  cat << 'EOF' > contar_tokens.py
+ 1455  import os
+ 1456  import tiktoken
+ 1457  enc = tiktoken.encoding_for_model("gpt-4o")
+ 1458  def contar_tokens_arquivo(caminho):
+ 1459      with open(caminho, "r", encoding="utf-8") as f:
+ 1460          conteudo = f.read()
+ 1461      return len(enc.encode(conteudo))
+ 1462  def varrer_projeto(diretorio):
+ 1463      total = 0
+ 1464      for root, dirs, files in os.walk(diretorio):
+ 1465          for file in files:
+ 1466              if file.endswith(".py"):
+ 1467                  caminho = os.path.join(root, file)
+ 1468                  tokens = contar_tokens_arquivo(caminho)
+ 1469                  print(f"{caminho}: {tokens} tokens")
+ 1470                  total += tokens
+ 1471      print(f"\n🔢 Total estimado: {total} tokens")
+ 1472      return total
+ 1473  if __name__ == "__main__":
+ 1474      varrer_projeto("src")
+ 1475  EOF
+ 1476  python contar_tokens.py
+ 1477  rm src/components/src/components/openai_client.py
+ 1478  python contar_tokens.py
+ 1479  pip install tiktoken
+ 1480  cat << 'EOF' > contar_tokens.py
+ 1481  import sys
+ 1482  import tiktoken
+ 1483  enc = tiktoken.encoding_for_model("gpt-4o")
+ 1484  def contar_tokens_arquivo(path):
+ 1485      with open(path, 'r', encoding='utf-8') as f:
+ 1486          conteudo = f.read()
+ 1487      return len(enc.encode(conteudo))
+ 1488  arquivos = [
+ 1489      "src/windows/base_window.py",
+ 1490      "src/windows/windows_manager.py",
+ 1491      "src/windows/compositor_window.py",
+ 1492      "src/windows/edition_window.py",
+ 1493      "src/windows/image_composer_window.py",
+ 1494      "src/windows/manager/scene_manager.py"
+ 1495  ]
+ 1496  for arquivo in arquivos:
+ 1497      try:
+ 1498          tokens = contar_tokens_arquivo(arquivo)
+ 1499          print(f"{arquivo}: {tokens} tokens")
+ 1500      except Exception as e:
+ 1501          print(f"{arquivo}: ERRO ({e})")
+ 1502  EOF
+ 1503  python contar_tokens.py
+ 1504  cat << 'EOF' > upload_para_assistente.py
+ 1505  import openai
+ 1506  import os
+ 1507  client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+ 1508  arquivos = [
+ 1509      "src/windows/base_window.py",
+ 1510      "src/windows/windows_manager.py",
+ 1511      "src/windows/compositor_window.py",
+ 1512      "src/windows/edition_window.py",
+ 1513      "src/windows/image_composer_window.py",
+ 1514      "src/windows/manager/scene_manager.py"
+ 1515  ]
+ 1516  for path in arquivos:
+ 1517      with open(path, "rb") as f:
+ 1518          uploaded = client.files.create(file=f, purpose="assistants")
+ 1519          print(f"{path} => {uploaded.id}")
+ 1520  EOF
+ 1521  # Execute com:
+ 1522  python upload_para_assistente.py
+ 1523  tree src/windows
+ 1524  find src -type f
+ 1525  cat << 'EOF' > upload_para_assistente.py
+ 1526  import openai
+ 1527  import os
+ 1528  client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+ 1529  arquivos = [
+ 1530      "windows/base_window.py",
+ 1531      "windows/windows_manager.py",
+ 1532      "windows/compositor_window.py",
+ 1533      "windows/edition_window.py",
+ 1534      "windows/image_composer_window.py",
+ 1535      "windows/manager/scene_manager.py"
+ 1536  ]
+ 1537  for path in arquivos:
+ 1538      try:
+ 1539          with open(path, "rb") as f:
+ 1540              uploaded = client.files.create(file=f, purpose="assistants")
+ 1541              print(f"{path} => {uploaded.id}")
+ 1542      except Exception as e:
+ 1543          print(f"❌ Erro ao enviar {path}: {e}")
+ 1544  EOF
+ 1545  cat << 'EOF' > upload_para_assistente.py
+ 1546  import openai
+ 1547  import os
+ 1548  client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+ 1549  arquivos = [
+ 1550      "windows/base_window.py",
+ 1551      "windows/windows_manager.py",
+ 1552      "windows/compositor_window.py",
+ 1553      "windows/edition_window.py",
+ 1554      "windows/image_composer_window.py",
+ 1555      "windows/manager/scene_manager.py"
+ 1556  ]
+ 1557  for path in arquivos:
+ 1558      try:
+ 1559          with open(path, "rb") as f:
+ 1560              uploaded = client.files.create(file=f, purpose="assistants")
+ 1561              print(f"{path} => {uploaded.id}")
+ 1562      except Exception as e:
+ 1563          print(f"❌ Erro ao enviar {path}: {e}")
+ 1564  EOF
+ 1565  cat << 'EOF' > upload_para_assistente.py
+ 1566  import openai
+ 1567  client = openai.OpenAI(api_key="REDACTED_OPENAI_KEY")
+ 1568  arquivos = [
+ 1569      "windows/base_window.py",
+ 1570      "windows/windows_manager.py",
+ 1571      "windows/compositor_window.py",
+ 1572      "windows/edition_window.py",
+ 1573      "windows/image_composer_window.py",
+ 1574      "windows/manager/scene_manager.py"
+ 1575  ]
+ 1576  for path in arquivos:
+ 1577      try:
+ 1578          with open(path, "rb") as f:
+ 1579              uploaded = client.files.create(file=f, purpose="assistants")
+ 1580              print(f"{path} => {uploaded.id}")
+ 1581      except Exception as e:
+ 1582          print(f"❌ Erro ao enviar {path}: {e}")
+ 1583  EOF
+ 1584  python upload_para_assistente.py
+ 1585  tree /home/periclesguara/Projetos/RINOVISION03/managers
+ 1586  mv managers/editor_manager/text_efects._manager.py managers/editor_manager/text_effects_manager.py
+ 1587  cat << 'EOF' > upload_managers.py
+ 1588  import openai
+ 1589  import os
+ 1590  # Chave direto no código (temporário e só local)
+ 1591  client = openai.OpenAI(api_key="REDACTED_OPENAI_KEY")
+ 1592  arquivos = [
+ 1593      "managers/audio_manager.py",
+ 1594      "managers/record_manager.py",
+ 1595      "managers/scene_manager.py",
+ 1596      "managers/editor_manager/export_manager.py",
+ 1597      "managers/editor_manager/music_manager.py",
+ 1598      "managers/editor_manager/subtitle_manager.py",
+ 1599      "managers/editor_manager/text_effects_manager.py"
+ 1600  ]
+ 1601  for path in arquivos:
+ 1602      try:
+ 1603          with open(path, "rb") as f:
+ 1604              uploaded = client.files.create(file=f, purpose="assistants")
+ 1605              print(f"✅ {path} => {uploaded.id}")
+ 1606      except Exception as e:
+ 1607          print(f"❌ Erro ao enviar {path}: {e}")
+ 1608  EOF
+ 1609  python upload_managers.py
+ 1610  cat << 'EOF' > criar_assistente_rino.py
+ 1611  import openai
+ 1612  client = openai.OpenAI(api_key="REDACTED_OPENAI_KEY")
+ 1613  file_ids = [
+ 1614      "file-1rX5jt1Pn7YPq2WjriSAjB",  # base_window.py
+ 1615      "file-EG7kWM2bRAU4KXVrb6VbXZ",  # compositor_window.py
+ 1616      "file-5RxvG7A1DDCZ1vwQ8fwWtS",  # edition_window.py
+ 1617      "file-K4ggiky82jqKL4mhzEyxyL",  # image_composer_window.py
+ 1618      "file-3XaL22WFvzF3SDgmb5ujz9",  # audio_manager.py
+ 1619      "file-4T3PuQgUJ776MRSohSZqEr",  # record_manager.py
+ 1620      "file-DdeE2HiCkmq9bqeEFvGRYP",  # scene_manager.py
+ 1621      "file-WfB92UFZxeNJWisVjgnmEo",  # export_manager.py
+ 1622      "file-Q7SZtpMtF4EfXErEqfAsBK",  # music_manager.py
+ 1623      "file-MLoRTfw3bchvMq3YZNoUKC",  # subtitle_manager.py
+ 1624      "file-FsDsK3xj4iLhdY42Kecmwa"   # text_effects_manager.py
+ 1625  ]
+ 1626  assistant = client.beta.assistants.create(
+ 1627      name="RinoVision Auditor",
+ 1628      instructions="Você é um especialista em engenharia de software. Sua missão é revisar o projeto RinoVision e ajudar o desenvolvedor a identificar problemas, sugerir melhorias e acelerar o desenvolvimento com contexto total do sistema.",
+ 1629      model="gpt-4o",
+ 1630      tools=[{"type": "code_interpreter"}],
+ 1631      file_ids=file_ids
+ 1632  )
+ 1633  print("🧠 Assistente RinoVision criado com sucesso!")
+ 1634  print(f"ID do Assistente: {assistant.id}")
+ 1635  EOF
+ 1636  python criar_assistente_rino.py
+ 1637  cat << 'EOF' > criar_assistente_rino.py
+ 1638  import openai
+ 1639  client = openai.OpenAI(api_key="REDACTED_OPENAI_KEY")
+ 1640  # Passo 1: Cria o assistente sem os arquivos
+ 1641  assistant = client.beta.assistants.create(
+ 1642      name="RinoVision Auditor",
+ 1643      instructions="Você é um especialista em engenharia de software. Sua missão é revisar o projeto RinoVision e ajudar o desenvolvedor a identificar problemas, sugerir melhorias e acelerar o desenvolvimento com contexto total do sistema.",
+ 1644      model="gpt-4o",
+ 1645      tools=[{"type": "code_interpreter"}]
+ 1646  )
+ 1647  print("🧠 Assistente RinoVision criado!")
+ 1648  print(f"ID do Assistente: {assistant.id}")
+ 1649  # Passo 2: Anexa os arquivos ao assistente (como contexto)
+ 1650  file_ids = [
+ 1651      "file-1rX5jt1Pn7YPq2WjriSAjB",
+ 1652      "file-EG7kWM2bRAU4KXVrb6VbXZ",
+ 1653      "file-5RxvG7A1DDCZ1vwQ8fwWtS",
+ 1654      "file-K4ggiky82jqKL4mhzEyxyL",
+ 1655      "file-3XaL22WFvzF3SDgmb5ujz9",
+ 1656      "file-4T3PuQgUJ776MRSohSZqEr",
+ 1657      "file-DdeE2HiCkmq9bqeEFvGRYP",
+ 1658      "file-WfB92UFZxeNJWisVjgnmEo",
+ 1659      "file-Q7SZtpMtF4EfXErEqfAsBK",
+ 1660      "file-MLoRTfw3bchvMq3YZNoUKC",
+ 1661      "file-FsDsK3xj4iLhdY42Kecmwa"
+ 1662  ]
+ 1663  for file_id in file_ids:
+ 1664      client.beta.assistants.files.create(
+ 1665          assistant_id=assistant.id,
+ 1666          file_id=file_id
+ 1667      )
+ 1668  print("📎 Todos os arquivos foram anexados com sucesso!")
+ 1669  EOF
+ 1670  python criar_assistente_rino.py
+ 1671  cat << 'EOF' > criar_assistente_rino.py
+ 1672  import openai
+ 1673  client = openai.OpenAI(api_key="REDACTED_OPENAI_KEY")
+ 1674  # Cria o assistente
+ 1675  assistant = client.beta.assistants.create(
+ 1676      name="RinoVision Auditor",
+ 1677      instructions="Você é um especialista em engenharia de software. Sua missão é revisar o projeto RinoVision e ajudar o desenvolvedor a identificar problemas, sugerir melhorias e acelerar o desenvolvimento com contexto total do sistema.",
+ 1678      model="gpt-4o",
+ 1679      tools=[{"type": "code_interpreter"}]
+ 1680  )
+ 1681  print("🧠 Assistente RinoVision criado!")
+ 1682  print(f"ID do Assistente: {assistant.id}")
+ 1683  # Lista de arquivos já enviados anteriormente
+ 1684  file_ids = [
+ 1685      "file-1rX5jt1Pn7YPq2WjriSAjB",
+ 1686      "file-EG7kWM2bRAU4KXVrb6VbXZ",
+ 1687      "file-5RxvG7A1DDCZ1vwQ8fwWtS",
+ 1688      "file-K4ggiky82jqKL4mhzEyxyL",
+ 1689      "file-3XaL22WFvzF3SDgmb5ujz9",
+ 1690      "file-4T3PuQgUJ776MRSohSZqEr",
+ 1691      "file-DdeE2HiCkmq9bqeEFvGRYP",
+ 1692      "file-WfB92UFZxeNJWisVjgnmEo",
+ 1693      "file-Q7SZtpMtF4EfXErEqfAsBK",
+ 1694      "file-MLoRTfw3bchvMq3YZNoUKC",
+ 1695      "file-FsDsK3xj4iLhdY42Kecmwa"
+ 1696  ]
+ 1697  # Anexa cada arquivo ao assistente
+ 1698  for file_id in file_ids:
+ 1699      client.beta.assistants_files.create(
+ 1700          assistant_id=assistant.id,
+ 1701          file_id=file_id
+ 1702      )
+ 1703      print(f"✅ Arquivo {file_id} anexado.")
+ 1704  EOF
+ 1705  python criar_assistente_rino.py
+ 1706  cat << 'EOF' > criar_assistente_rino.py
+ 1707  import openai
+ 1708  client = openai.OpenAI(api_key="REDACTED_OPENAI_KEY")
+ 1709  # Criação do assistente
+ 1710  assistant = client.beta.assistants.create(
+ 1711      name="RinoVision Auditor",
+ 1712      instructions="Você é um engenheiro de software especializado. Seu papel é revisar o projeto RinoVision, sugerir melhorias, detectar bugs e auxiliar no desenvolvimento baseado nos arquivos anexados.",
+ 1713      model="gpt-4o",
+ 1714      tools=[{"type": "code_interpreter"}]
+ 1715  )
+ 1716  print("🧠 Assistente RinoVision criado!")
+ 1717  print(f"ID do Assistente: {assistant.id}")
+ 1718  # IDs dos arquivos já enviados
+ 1719  file_ids = [
+ 1720      "file-1rX5jt1Pn7YPq2WjriSAjB",
+ 1721      "file-EG7kWM2bRAU4KXVrb6VbXZ",
+ 1722      "file-5RxvG7A1DDCZ1vwQ8fwWtS",
+ 1723      "file-K4ggiky82jqKL4mhzEyxyL",
+ 1724      "file-3XaL22WFvzF3SDgmb5ujz9",
+ 1725      "file-4T3PuQgUJ776MRSohSZqEr",
+ 1726      "file-DdeE2HiCkmq9bqeEFvGRYP",
+ 1727      "file-WfB92UFZxeNJWisVjgnmEo",
+ 1728      "file-Q7SZtpMtF4EfXErEqfAsBK",
+ 1729      "file-MLoRTfw3bchvMq3YZNoUKC",
+ 1730      "file-FsDsK3xj4iLhdY42Kecmwa"
+ 1731  ]
+ 1732  # Agora sim: anexa arquivos ao assistente
+ 1733  for file_id in file_ids:
+ 1734      client.beta.assistants.files.create(
+ 1735          assistant_id=assistant.id,
+ 1736          file_id=file_id
+ 1737      )
+ 1738      print(f"✅ Arquivo {file_id} anexado.")
+ 1739  EOF
+ 1740  python criar_assistente_rino.py
+ 1741  pip install openai==1.11.0 --upgrade
+ 1742  python criar_assistente_rino.py
+ 1743  pip install openai==1.11.0 --upgrade
+ 1744  nano criar_assistente_rino.py
+ 1745  rm criar_assistente_rino.py
+ 1746  nano criar_assistente_rino.py
+ 1747  python criar_assistente_rino.py
+ 1748  pip uninstall openai -y
+ 1749  pip install --upgrade openai
+ 1750  pip install openai==1.30.1
+ 1751  nano testar_openai.py
+ 1752  python testar_openai.py
+ 1753  pip uninstall openai -y
+ 1754  pip install --upgrade pip
+ 1755  pip install --upgrade "openai>=1.3.5"
+ 1756  nano testar_openai.py
+ 1757  rm criar_assistente_rino.py testar_openai.py upload_para_assistente.py || true
+ 1758  nano testar_openai.py
+ 1759  python testar_openai.py
+ 1760  pip install --upgrade openai
+ 1761  rm criar_assistente_rino.py 2>/dev/null
+ 1762  nano criar_assistente_rino.py
+ 1763  python criar_assistente_rino.py
+ 1764  nano anexar_arquivos_assistente.py
+ 1765  python anexar_arquivos_assistente.py
+ 1766  nano anexar_com_vectorstore.py
+ 1767  python anexar_com_vectorstore.py
+ 1768  pip install --upgrade openai
+ 1769  python -c "import openai; print(openai.__version__)"
+ 1770  nano criar_assistente_rino.py
+ 1771  python criar_assistente_rino.py
+ 1772  source venv/bin/activate
+ 1773  rm -f upload_projeto_rinovision.py
+ 1774  nano upload_projeto_rinovision.py
+ 1775  python upload_projeto_rinovision.py
+ 1776  ls criar_assistente_*.py
+ 1777  rm criar_assistente_rino.py
+ 1778  nano criar_assistente_rino.py
+ 1779  python criar_assistente_rino.py
+ 1780  nano upload_arquivos_rino.py
+ 1781  python upload_arquivos_rino.py
+ 1782  mv /mnt/data/briefing_assistente_gpt.md ~/Projetos/RINOVISION03/
+ 1783  ls ~/Projetos/RINOVISION03/
+ 1784  nano briefing_assistente_gpt.md
+ 1785  python usar_assistente.py briefing_assistente_gpt.md
+ 1786  @briefing_assistente_gpt.md
+ 1787  rm briefing_assistente_gpt.md
+ 1788  nano briefing_assistente_gpt.md
+ 1789  python usar_assistente.py briefing_assistente_gpt.md
+ 1790  source venv/bin/activate
+ 1791  python main.py
+ 1792  python main_debug_webcam.py
+ 1793  python main_debug_webcam_window.py
+ 1794  nano main_debug_webcam_window.py
+ 1795  python main_debug_webcam_window.py
+ 1796  nano main_debug_base_window.py
+ 1797  python main_debug_base_window.py
+ 1798  nano main_debug_compositor.py
+ 1799  python main_debug_compositor.py
+ 1800  source venv/bin/activate
+ 1801  cd ~/Projetos/RINOVISION03/managers
+ 1802  nano webcam_manager.py
+ 1803  cd ~/Projetos/RINOVISION03
+ 1804  nano main_webcam_preview.py
+ 1805  python main_webcam_preview.py
+ 1806  python windows/webcam_window.py
+ 1807  python -m windows.webcam_window
+ 1808  python -m windows.webcam_window.py
+ 1809  python -m windows.webcam_window
+ 1810  cd ~/Projetos/RINOVISION03/windows
+ 1811  nano webcam_window_refactor.py
+ 1812  python webcam_window_refactor.py
+ 1813  touch managers/__init__.py
+ 1814  ls
+ 1815  cd ..
+ 1816  touch managers/__init__.py
+ 1817  ls managers
+ 1818  python -m windows.webcam_window_refactor
+ 1819  python webcam_window_refactor_v2.py
+ 1820  python windows/webcam_window_refactor_v2.py
+ 1821  python -m windows.webcam_window_refactor_v2
+ 1822  python windows/webcam_window_refactor_v2.py
+ 1823  rm managers/webcam_manager.py
+ 1824  nano managers/webcam_manager.py
+ 1825  python -m windows.webcam_window_refactor_v3
+ 1826  python windows/webcam_window_refactorv3.py
+ 1827  nano windows/webcam_window_refactorv4.py
+ 1828  python windows/webcam_window_refactorv4.py
+ 1829  nano managers/webcam_manager_refactorv1.py
+ 1830  nano test_webcam_manager.py
+ 1831  python test_webcam_manager.py
+ 1832  source venv/bin/activate
+ 1833  cd ~/Projetos/RINOVISION03/assistente
+ 1834  mkdir -p AgenteCrewAI02/agents
+ 1835  mkdir -p AgenteCrewAI02/tasks
+ 1836  touch AgenteCrewAI02/main.py
+ 1837  touch AgenteCrewAI02/agents/code_reader_agent.py
+ 1838  touch AgenteCrewAI02/agents/gui_agent.py
+ 1839  touch AgenteCrewAI02/agents/integration_agent.py
+ 1840  touch AgenteCrewAI02/agents/bug_hunter_agent.py
+ 1841  touch AgenteCrewAI02/tasks/task_integrar_webcam.py
+ 1842  cd ~/Projetos/RINOVISION03/assistente/crewai
+ 1843  nano code_reader_agent.py
+ 1844  cd ~/Projetos/RINOVISION03/assistente/crewai
+ 1845  nano gui_agent.py
+ 1846  cd ~/Projetos/RINOVISION03/assistente/crewai
+ 1847  nano integration_agent.py
+ 1848  cd ~/Projetos/RINOVISION03/assistente/crewai
+ 1849  nano bug_hunter_agent.py
+ 1850  cd ~/Projetos/RINOVISION03/assistente/crewai
+ 1851  nano webcam_review_crew.py
+ 1852  nano AgenteCrewAI02/main.py
+ 1853  touch main.py
+ 1854  nano main.py
+ 1855  nano tasks/task_integrar_webcam.py
+ 1856  mkdir -p AgenteCrewAI02/tasks
+ 1857  nano AgenteCrewAI02/tasks/task_integrar_webcam.py
+ 1858  nano AgenteCrewAI02/main.py
+ 1859  python AgenteCrewAI02/main.py
+ 1860  cd ~/Projetos/RINOVISION03/assistente/crewai
+ 1861  python AgenteCrewAI02/main.py
+ 1862  touch AgenteCrewAI02/__init__.py
+ 1863  touch AgenteCrewAI02/agents/__init__.py
+ 1864  touch AgenteCrewAI02/tasks/__init__.py
+ 1865  mkdir -p AgenteCrewAI02/agents
+ 1866  mkdir -p AgenteCrewAI02/tasks
+ 1867  touch AgenteCrewAI02/__init__.py
+ 1868  touch AgenteCrewAI02/agents/__init__.py
+ 1869  touch AgenteCrewAI02/tasks/__init__.py
+ 1870  python -m AgenteCrewAI02.main
+ 1871  pwd
+ 1872  ls -R .
+ 1873  mv gui_agent.py AgenteCrewAI02/agents/
+ 1874  mv code_reader_agent.py AgenteCrewAI02/agents/
+ 1875  mv integration_agent.py AgenteCrewAI02/agents/
+ 1876  mv bug_hunter_agent.py AgenteCrewAI02/agents/
+ 1877  ls -lh AgenteCrewAI02/agents/
+ 1878  nano AgenteCrewAI02/agents/__init__.py
+ 1879  cat AgenteCrewAI02/agents/code_reader_agent.py
+ 1880  cat AgenteCrewAI02/agents/gui_agent.py
+ 1881  cat AgenteCrewAI02/agents/integration_agent.py
+ 1882  cat AgenteCrewAI02/agents/bug_hunter_agent.py
+ 1883  nano AgenteCrewAI02/agents/code_reader_agent.py
+ 1884  python AgenteCrewAI02/main.py
+ 1885  nano AgenteCrewAI02/main.py
+ 1886  python AgenteCrewAI02/main.py
+ 1887  python windows/webcam_window_refactorv4.py
+ 1888  python -m windows.webcam_window_refactorv4
+ 1889  cd ~/Projetos/RINOVISION03
+ 1890  python -m windows.webcam_window_refactorv4
+ 1891  source ~/Projetos/RINOVISION03/venv/bin/activate
+ 1892  pip install --force-reinstall PySide6
+ 1893  python
+ 1894  >>> from PySide6.QtGui import QIcon  # ou qualquer outro da GUI
+ 1895  >>> from PySide6.QtWidgets import QPushButton
+ 1896  python -m windows.webcam_window_refactorv4
+ 1897  pip uninstall PySide6 -y
+ 1898  pip install "PySide6==6.9.1"
+ 1899  cd ~/Projetos/RINOVISION03
+ 1900  deactivate  # se estiver num venv
+ 1901  rm -rf venv
+ 1902  python3 -m venv venv
+ 1903  source venv/bin/activate
+ 1904  pip install -U pip
+ 1905  pip install "PySide6==6.9.1"  # ou 6.9.0, mas tudo igual!
+ 1906  pip install -r requirements.txt  # se você tiver um
+ 1907  pip show PySide6
+ 1908  python -c "from PySide6.QtCore import QT_VERSION_STR; print(QT_VERSION_STR)"
+ 1909  cd ~/Projetos/RINOVISION03
+ 1910  # sai do venv, se ainda tiver nele
+ 1911  deactivate
+ 1912  # apaga o venv
+ 1913  rm -rf venv
+ 1914  # cria um novo venv limpo
+ 1915  python3 -m venv venv
+ 1916  source venv/bin/activate
+ 1917  pip install -U pip
+ 1918  # instala tudo da mesma versão (recomendo 6.9.1 pois parece que algo do seu sistema tá nela)
+ 1919  pip install "PySide6==6.9.1"
+ 1920  python -c "from PySide6.QtCore import QT_VERSION_STR; print(QT_VERSION_STR)"
+ 1921  python -c "import PySide6; print(PySide6.__version__)"
+ 1922  python windows/webcam_window_refactorv4.py
+ 1923  python -m windows.webcam_window_refactorv4
+ 1924  pip install opencv-python
+ 1925  pip install opencv-contrib-python
+ 1926  python windows/webcam_window_refactorv4.py
+ 1927  /home/periclesguara/Projetos/RINOVISION03/managers/
+ 1928  touch /home/periclesguara/Projetos/RINOVISION03/managers/__init__.py
+ 1929  cd /home/periclesguara/Projetos/RINOVISION03
+ 1930  python -m windows.webcam_window_refactorv4
+ 1931  pip install mediapipe
+ 1932  python -m windows.webcam_window_refactorv4
+ 1933  python -c "import PySide6; print(PySide6.__version__)"
+ 1934  # Deve printar: 6.9.0
+ 1935  cat ~/.bash_history | grep "$(date '+%Y-%m-%d')" > logs_de_hoje.txt
+ 1936  history > logs_de_hoje.txt

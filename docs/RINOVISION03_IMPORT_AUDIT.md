@@ -37,7 +37,26 @@ Webcam-related legacy imports were hardened:
 - Importing webcam modules does not open camera hardware, start timers, launch GUI, or start threads.
 - `rinovision.capture.webcam.WebcamCaptureAdapter` reports `available`, `missing_dependencies`, and `message`.
 
-Current healthcheck result in this shell: webcam imports are safe, but runtime webcam capability is unavailable because optional dependencies `opencv-python`, `numpy`, and `mediapipe` are missing.
+Current healthcheck result in this shell: webcam imports are safe. Runtime webcam capability depends on optional packages and camera hardware; healthcheck reports dependency availability without opening the camera.
+
+## Webcam Preview Lifecycle
+
+The canonical preview lifecycle is now `rinovision.capture.webcam.WebcamPreviewController`:
+
+- `start()` opens the camera explicitly;
+- `read_frame()` reads a single frame;
+- `stop()` releases the camera and can be called repeatedly;
+- no camera access happens during import or controller construction;
+- PySide6 GUI windows should use `QTimer` to call one frame read per tick;
+- blocking `while True` loops are forbidden inside GUI code.
+
+Manual CLI preview:
+
+```bash
+python main.py --webcam-probe
+python main.py --webcam-preview
+python main.py --webcam-preview --camera-id 1
+```
 
 ## Music Manager Fix
 

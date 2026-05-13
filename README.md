@@ -93,6 +93,16 @@ Demo:
 python main.py --editing-demo
 ```
 
+## Webcam Preview
+
+```bash
+python main.py --webcam-probe
+python main.py --webcam-preview
+python main.py --webcam-preview --camera-id 1
+```
+
+Webcam preview requires `opencv-python`. Use `--webcam-probe` to list available camera IDs first. The preview is read-only and live only; it does not record or write video files. Press `Q` or `ESC` to close the preview window.
+
 ## Security Notes
 
 Do not commit `.env`. API providers must be configured through environment variables and provider adapters. Legacy hardcoded API key patterns were redacted during the safety pass; rotate any keys that may have appeared in old logs or history.
@@ -108,6 +118,7 @@ python main.py --safe-mode
 python main.py --ai-video-demo
 python main.py --ai-video-creator-demo
 python main.py --editing-demo
+python main.py --webcam-probe
 ```
 
 Current validation target is the new foundation, not the full legacy tree. Some legacy modules still require optional GUI/media dependencies.
@@ -119,3 +130,21 @@ Optional grouped requirements were added:
 - `requirements-ai.txt`
 
 The original `requirements.txt` is preserved.
+
+## Webcam Lifecycle
+
+The canonical webcam runtime lifecycle is `WebcamPreviewController` in `rinovision.capture.webcam`:
+
+```text
+start() -> read_frame() by CLI loop or GUI timer -> stop()
+```
+
+The controller does not open the camera during import or construction. GUI webcam previews must use timer/event-driven frame updates, not blocking `while True` loops. CLI preview is explicit only:
+
+```bash
+python main.py --webcam-probe
+python main.py --webcam-preview
+python main.py --webcam-preview --camera-id 1
+```
+
+Press `Q` or `ESC` to close the CLI preview. The command is read-only and does not record video.

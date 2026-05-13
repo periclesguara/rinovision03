@@ -41,6 +41,22 @@ def parse_args(argv=None):
         action="store_true",
         help="run the AI Video Creator brief-to-editing local stub flow",
     )
+    parser.add_argument(
+        "--webcam-probe",
+        action="store_true",
+        help="probe available webcam devices without opening a preview window",
+    )
+    parser.add_argument(
+        "--webcam-preview",
+        action="store_true",
+        help="open a live read-only webcam preview window",
+    )
+    parser.add_argument(
+        "--camera-id",
+        type=int,
+        default=0,
+        help="camera id for --webcam-preview",
+    )
     return parser.parse_args(argv)
 
 
@@ -128,6 +144,44 @@ def run_ai_video_creator_demo():
     print(f"social_package_path: {result['social_package_path']}")
     return 0
 
+
+def run_webcam_probe(max_devices: int = 5):
+    from rinovision.capture.webcam import probe_webcams
+
+    print("RinoVision Webcam Probe")
+    results = probe_webcams(max_devices=max_devices)
+    for item in results:
+        if item.get("camera_id") is None:
+            print(item.get("message", "Webcam probing unavailable."))
+            continue
+        status = "available" if item.get("available") else "unavailable"
+        detail = ""
+        if item.get("available"):
+            detail = f" ({item.get('width', 0)}x{item.get('height', 0)} @ {item.get('fps', 0):g} fps)"
+        print(f"Camera {item['camera_id']}: {status}{detail}")
+    return 0
+
+
+def run_webcam_preview(camera_id: int = 0):
+    from rinovision.capture.webcam import preview_webcam
+
+    print(f"Opening RinoVision webcam preview on camera {camera_id}.")
+    print("Press Q or ESC to close.")
+    result = preview_webcam(camera_id=camera_id)
+    if result.get("ok"):
+        return 0
+    error = result.get("error", "Unknown webcam preview error")
+    if "OpenCV is missing" in error:
+        print("OpenCV is missing. Install with:")
+        print("pip install opencv-python")
+    elif error == "Could not open camera":
+        print(f"Could not open camera {camera_id}. Try:")
+        print("python main.py --webcam-probe")
+        print("python main.py --webcam-preview --camera-id 1")
+    else:
+        print(error)
+    return 1
+
 if __name__ == "__main__":
     args = parse_args()
     if args.healthcheck:
@@ -138,6 +192,10 @@ if __name__ == "__main__":
         sys.exit(run_editing_demo())
     if args.ai_video_creator_demo:
         sys.exit(run_ai_video_creator_demo())
+    if args.webcam_probe:
+        sys.exit(run_webcam_probe())
+    if args.webcam_preview:
+        sys.exit(run_webcam_preview(args.camera_id))
     if args.safe_foundation or args.safe_mode:
         from rinovision.ui.main_window_adapter import launch_safe_mode
 

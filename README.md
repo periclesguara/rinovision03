@@ -153,7 +153,7 @@ Press `Q` or `ESC` to close the CLI preview. The command is read-only and does n
 
 ## Studio Composer
 
-Studio Composer is the OBS-like preparation screen for composing a scene before recording. It provides a canvas for multiple image layers, multiple video layers, and one independent webcam overlay layer. Layers can be selected, moved, scaled with the mouse wheel, ordered forward/backward, locked, and saved as scene layout JSON for a later recording step.
+Studio Composer is the OBS-like preparation screen for composing a scene before recording. It provides a canvas for multiple image layers, multiple video layers, and one independent webcam overlay layer. Layers can be selected, moved, scaled with `Scale +` / `Scale -`, ordered forward/backward, locked, and saved as scene layout JSON for a later recording step.
 
 Commands:
 
@@ -163,4 +163,4 @@ python main.py --studio-composer-demo-multilayer
 python main.py --studio-composer
 ```
 
-The demo layout commands are headless and safe for CI. The GUI command opens the PySide6 Studio Composer window. Image/video uploads are copied into `data/studio_composer/uploads/`; video layers use first-frame preview/placeholder metadata for now. This module does not record video yet; it saves layout metadata under `data/studio_composer/layouts/`. Webcam preview still follows the controlled lifecycle and opens only after the user enables it in the composer.
+The demo layout commands are headless and safe for CI. The GUI command opens the PySide6 Studio Composer window. Image/video uploads are copied into `data/studio_composer/uploads/`; video layers show a first-frame preview and can be played/paused with the selected-layer `Play/Pause` control. This module does not record video yet; it saves layout metadata under `data/studio_composer/layouts/`. Webcam preview still follows the controlled lifecycle and opens only after the user enables it in the composer.

@@ -13,6 +13,7 @@ Recording is intentionally not part of this module yet.
 - `layout.py`: create, update, lock, unlock, save, and load scenes.
 - `media_loader.py`: supported upload validation and copying into Studio Composer storage.
 - `video_preview.py`: first-frame preview helper, with ffmpeg as optional runtime dependency.
+- `video_playback.py`: selected-layer play/pause preview helper, with lazy OpenCV use.
 - `webcam_overlay.py`: wrapper around `WebcamPreviewController`; no camera opens during import.
 - `controller.py`: headless orchestration, layer operations, z-order, and demo scene creation.
 - `ui/`: optional PySide6 QGraphicsView screen.
@@ -96,9 +97,10 @@ python main.py --studio-composer
 
 - Upload Image supports repeated uploads and multi-select.
 - Upload Video supports repeated uploads and multi-select.
-- Video playback is not implemented yet; video layers use first-frame preview or placeholder behavior.
+- Video layers use first-frame preview on upload.
+- `Play/Pause` starts or pauses the selected video layer with a controlled QTimer.
 - Layers are selectable and draggable.
-- Mouse wheel scales the selected item.
+- `Scale +` and `Scale -` resize the selected image, video, or webcam layer.
 - Forward/Backward changes selected layer `z_index`.
 - Lock freezes all current layers and saves the scene.
 - Unlock allows editing again.

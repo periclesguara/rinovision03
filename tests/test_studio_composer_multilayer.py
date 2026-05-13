@@ -21,6 +21,18 @@ def test_multiple_image_layers_can_be_added(tmp_path):
     assert len(controller.scene.layers) == 2
 
 
+def test_image_layer_has_initial_resizable_frame(tmp_path):
+    controller = StudioComposerController("image-frame")
+    layer = controller.add_image_layer(_media_file(tmp_path, "photo.png"))
+    assert layer.width == 640
+    assert layer.height == 360
+    assert layer.scale == 1.0
+    controller.scale_layer(layer.id, 1.5)
+    assert layer.width == 640
+    assert layer.height == 360
+    assert layer.scale == 1.5
+
+
 def test_multiple_video_layers_can_be_added(tmp_path):
     controller = StudioComposerController("multi-videos")
     first = controller.add_video_layer(_media_file(tmp_path, "one.mp4"))

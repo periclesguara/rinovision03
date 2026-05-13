@@ -1,4 +1,5 @@
 from rinovision.studio_composer.controller import StudioComposerController
+from rinovision.studio_composer.ui.canvas_view import StudioCanvasView
 
 
 def _media_file(tmp_path, name):
@@ -34,3 +35,48 @@ def test_layer_visibility_toggle(tmp_path):
     assert layer.visible is False
     controller.toggle_layer_visibility(layer.id)
     assert layer.visible is True
+
+
+def test_canvas_geometry_sync_keeps_base_size_separate_from_scale():
+    controller = StudioComposerController("geometry-scene")
+    layer = controller.add_webcam_layer(enabled=False)
+    layer.width = 320
+    layer.height = 240
+    layer.scale = 2.0
+
+    class Rect:
+        def width(self):
+            return 320
+
+        def height(self):
+            return 240
+
+    class FakeItem:
+        def boundingRect(self):
+            return Rect()
+
+        def x(self):
+            return 10
+
+        def y(self):
+            return 20
+
+        def scale(self):
+            return 2.0
+
+        def rotation(self):
+            return 0
+
+        def zValue(self):
+            return 99
+
+        def isVisible(self):
+            return True
+
+    canvas = StudioCanvasView.__new__(StudioCanvasView)
+    canvas.items_by_layer_id = {layer.id: FakeItem()}
+    canvas.sync_layer_geometry(layer)
+
+    assert layer.width == 320
+    assert layer.height == 240
+    assert layer.scale == 2.0

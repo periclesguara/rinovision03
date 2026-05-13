@@ -148,7 +148,7 @@ Healthcheck reports the controller import status and dependency status without p
 Upgraded. `rinovision/studio_composer/` now supports the pre-recording multilayer composition stage:
 
 - multiple image layers
-- multiple video layers with first-frame preview/placeholder behavior
+- multiple video layers with first-frame preview plus selected-layer play/pause
 - empty canvas fallback
 - independent webcam overlay controller using the existing safe webcam lifecycle
 - selected-layer move/scale/order metadata

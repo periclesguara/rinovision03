@@ -122,6 +122,7 @@ def studio_composer_capability() -> dict:
     model_status = import_status("rinovision.studio_composer.models")
     media_loader_status = import_status("rinovision.studio_composer.media_loader")
     video_preview_status = import_status("rinovision.studio_composer.video_preview")
+    video_playback_status = import_status("rinovision.studio_composer.video_playback")
     ui_status = import_status("rinovision.studio_composer.ui.studio_window")
     storage_status = {"ok": False}
     try:
@@ -151,6 +152,7 @@ def studio_composer_capability() -> dict:
         "multilayer_model_import": model_status,
         "media_loader_import": media_loader_status,
         "video_preview_import": video_preview_status,
+        "video_playback_import": video_playback_status,
         "ui_import": ui_status,
         "storage": storage_status,
         "pyside6_available": importlib.util.find_spec("PySide6") is not None,
@@ -259,6 +261,7 @@ def main() -> int:
     print(f"studio composer multilayer model: {'yes' if studio['multilayer_model_import']['ok'] else 'no'}")
     print(f"studio composer media loader: {'yes' if studio['media_loader_import']['ok'] else 'no'}")
     print(f"studio composer video preview: {'yes' if studio['video_preview_import']['ok'] else 'no'}")
+    print(f"studio composer video playback: {'yes' if studio['video_playback_import']['ok'] else 'no'}")
     print(f"studio composer storage: {'yes' if studio['storage'].get('ok') else 'no'}")
     print(f"studio composer QGraphicsView: {'yes' if studio.get('qgraphicsview_available') else 'no'}")
     print(f"report: {report['report_path']}")

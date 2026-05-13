@@ -27,14 +27,6 @@ class _LayerMixin:
         self.setFlag(self.GraphicsItemFlag.ItemIsMovable, not locked)
         self.setFlag(self.GraphicsItemFlag.ItemIsSelectable, not locked)
 
-    def wheelEvent(self, event):
-        if self.locked:
-            event.ignore()
-            return
-        factor = 1.05 if event.delta() > 0 else 0.95
-        self.setScale(max(0.05, min(10.0, self.scale() * factor)))
-        event.accept()
-
 
 class MovablePixmapItem(_LayerMixin, QGraphicsPixmapItem if QGraphicsPixmapItem else object):
     def __init__(self, pixmap=None, layer_id: str = "", layer_name: str = "layer"):

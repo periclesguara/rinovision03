@@ -14,7 +14,7 @@ class InspectorPanel(QWidget if QWidget else object):
         super().__init__(parent)
         self.labels = {}
         layout = QFormLayout(self)
-        for key in ("layer_id", "layer_name", "layer_type", "x", "y", "width", "height", "scale", "z_index", "visible", "locked"):
+        for key in ("layer_id", "layer_name", "layer_type", "x", "y", "width", "height", "scale", "z_index", "visible", "locked", "playback"):
             label = QLabel("-")
             self.labels[key] = label
             layout.addRow(key.replace("_", " ").title(), label)

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from rinovision.studio_composer.models import ComposerLayer, ComposerLayout, StudioComposerScene, utc_now
+from rinovision.studio_composer.models import ComposerLayer, ComposerLayout, StudioComposerScene, compute_z_index, utc_now, validate_layer_slot
 from rinovision.studio_composer.storage import safe_path, studio_path, write_json
 from rinovision.studio_composer.webcam_enhancement import default_webcam_enhancement
 
@@ -18,15 +18,17 @@ def create_scene(project_id: str | None = None) -> StudioComposerScene:
 
 
 def _next_z(scene: StudioComposerScene) -> int:
-    return max((layer.z_index for layer in scene.layers), default=0) + 1
+    return max((layer.local_z_index for layer in scene.layers), default=-1) + 1
 
 
 def add_layer(scene: StudioComposerScene, layer: ComposerLayer) -> ComposerLayer:
     if scene.locked:
         raise ValueError("scene is locked")
-    existing_indexes = {item.z_index for item in scene.layers}
-    if (layer.z_index <= 0 or layer.z_index in existing_indexes) and layer.layer_type != "empty":
-        layer.z_index = _next_z(scene)
+    validate_layer_slot(layer.layer_slot)
+    existing_indexes = {item.local_z_index for item in scene.layers if item.layer_slot == layer.layer_slot}
+    if layer.local_z_index in existing_indexes and layer.layer_type != "empty":
+        layer.local_z_index = _next_z(scene)
+    layer.recompute_z_index()
     scene.layers.append(layer)
     scene.selected_layer_id = layer.id
     scene.updated_at = utc_now()
@@ -40,10 +42,10 @@ def get_layer(scene: StudioComposerScene, layer_id: str) -> ComposerLayer:
     raise KeyError(f"layer not found: {layer_id}")
 
 
-def set_base_layer(scene: ComposerLayout, media_type: str, path: str | Path, width: float = 1280, height: float = 720) -> ComposerLayout:
+def set_base_layer(scene: ComposerLayout, media_type: str, path: str | Path, width: float = 1280, height: float = 720, layer_slot: int = 2) -> ComposerLayout:
     if scene.base_layer.locked or scene.locked:
         raise ValueError("base layer is locked")
-    layer = ComposerLayer(name="Base", layer_type=media_type, source_path=str(path), width=width, height=height, z_index=0)
+    layer = ComposerLayer(name="Base", layer_type=media_type, layer_slot=layer_slot, source_path=str(path), width=width, height=height)
     scene.base_layer = layer
     scene.selected_layer_id = layer.id
     scene.updated_at = utc_now()
@@ -59,6 +61,7 @@ def set_webcam_layer(
     y: float = 420,
     width: float = 320,
     height: float = 240,
+    layer_slot: int = 1,
 ) -> ComposerLayout:
     if scene.webcam_layer.locked or scene.locked:
         raise ValueError("webcam layer is locked")
@@ -68,6 +71,8 @@ def set_webcam_layer(
     layer.enabled = enabled
     layer.camera_id = camera_id
     layer.mode = mode
+    layer.layer_slot = validate_layer_slot(layer_slot)
+    layer.local_z_index = 0
     layer.metadata.setdefault("enhancement", default_webcam_enhancement())
     layer.x = x
     layer.y = y
@@ -76,7 +81,7 @@ def set_webcam_layer(
     layer.metadata["frame_width"] = width
     layer.metadata["frame_height"] = height
     layer.metadata["stable_frame_size"] = True
-    layer.z_index = max(layer.z_index, 99)
+    layer.computed_z_index = compute_z_index(layer.layer_slot, layer.local_z_index)
     scene.selected_layer_id = layer.id
     scene.updated_at = utc_now()
     return scene

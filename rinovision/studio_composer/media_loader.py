@@ -41,7 +41,7 @@ def _safe_layer_name(media_type: str, path: Path) -> str:
     return f"{media_type.title()} - {stem}"
 
 
-def import_media_file(path: str | Path, project_id: str) -> ComposerLayer:
+def import_media_file(path: str | Path, project_id: str, layer_slot: int = 2) -> ComposerLayer:
     source = validate_media_file(path)
     media_type = classify_media(source)
     target = copy_upload(source, project_id=project_id)
@@ -54,18 +54,19 @@ def import_media_file(path: str | Path, project_id: str) -> ComposerLayer:
     return ComposerLayer(
         name=_safe_layer_name(media_type, source),
         layer_type=media_type,
+        layer_slot=layer_slot,
         source_path=str(target),
         x=100,
         y=80,
         width=default_width,
         height=default_height,
-        z_index=1,
+        local_z_index=0,
         metadata=metadata,
     )
 
 
-def import_multiple_media_files(paths: list[str | Path], project_id: str) -> list[ComposerLayer]:
-    return [import_media_file(path, project_id) for path in paths]
+def import_multiple_media_files(paths: list[str | Path], project_id: str, layer_slot: int = 2) -> list[ComposerLayer]:
+    return [import_media_file(path, project_id, layer_slot=layer_slot) for path in paths]
 
 
 def import_base_media(source_path: str | Path) -> dict:

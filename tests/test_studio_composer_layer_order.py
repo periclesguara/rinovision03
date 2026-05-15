@@ -25,7 +25,8 @@ def test_set_layer_z_index(tmp_path):
     controller = StudioComposerController("z-scene")
     layer = controller.add_image_layer(_media_file(tmp_path, "image.png"))
     controller.set_layer_z_index(layer.id, 42)
-    assert layer.z_index == 42
+    assert layer.local_z_index == 42
+    assert layer.computed_z_index == 3042
 
 
 def test_layer_visibility_toggle(tmp_path):

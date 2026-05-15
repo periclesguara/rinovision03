@@ -59,7 +59,7 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         item.setScale(layer.scale)
         item.setRotation(layer.rotation)
         item.setOpacity(layer.opacity)
-        item.setZValue(layer.z_index)
+        item.setZValue(layer.computed_z_index)
         item.setVisible(layer.visible)
         item.set_locked(layer.locked)
 
@@ -111,7 +111,7 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
             layer.height = rect.height()
         layer.scale = item.scale()
         layer.rotation = item.rotation()
-        layer.z_index = int(item.zValue())
+        layer.computed_z_index = int(item.zValue())
         layer.visible = item.isVisible()
         return layer
 
@@ -150,5 +150,5 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
             "display_width": rect.width() * item.scale(),
             "display_height": rect.height() * item.scale(),
             "rotation": item.rotation(),
-            "z_index": int(item.zValue()),
+            "computed_z_index": int(item.zValue()),
         }

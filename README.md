@@ -155,6 +155,15 @@ Press `Q` or `ESC` to close the CLI preview. The command is read-only and does n
 
 Studio Composer is the OBS-like preparation screen for composing a scene before recording. It provides a canvas for multiple image layers, multiple video layers, and one independent webcam overlay layer. Layers can be selected, moved, scaled with `Scale +` / `Scale -`, ordered forward/backward, locked, and saved as scene layout JSON for a later recording step.
 
+Studio Composer now uses OBS-style numbered layer slots:
+
+- Layer 1: foreground / first plane
+- Layer 2: second plane, behind Layer 1
+- Layer 3: optional background, behind Layer 2
+- Layer 4: optional deeper background, behind Layer 3
+
+These slots are visual depth slots, not screen quadrants or regions. A source assigned to any slot can still be moved anywhere on the canvas using its `x`/`y` position. Webcam, image, and video sources can be assigned to any slot. Empty slots are allowed. Lock freezes the final positions, sizes, slots, and order before a later recording step.
+
 Commands:
 
 ```bash

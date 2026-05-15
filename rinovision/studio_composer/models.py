@@ -5,10 +5,48 @@ from uuid import uuid4
 
 
 LAYER_TYPES = {"image", "video", "webcam", "empty", "text_future"}
+SLOT_Z_BASES = {1: 4000, 2: 3000, 3: 2000, 4: 1000}
 
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def validate_layer_slot(slot_number: int) -> int:
+    slot_number = int(slot_number)
+    if slot_number not in SLOT_Z_BASES:
+        raise ValueError("layer_slot must be 1, 2, 3, or 4")
+    return slot_number
+
+
+def compute_z_index(layer_slot: int, local_z_index: int = 0) -> int:
+    layer_slot = validate_layer_slot(layer_slot)
+    return SLOT_Z_BASES[layer_slot] + int(local_z_index)
+
+
+@dataclass
+class LayerSlot:
+    slot_number: int
+    name: str
+    description: str
+    z_base: int
+    enabled: bool = True
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "LayerSlot":
+        return cls(**data)
+
+
+def create_default_layer_slots() -> list[LayerSlot]:
+    return [
+        LayerSlot(1, "Layer 1", "Foreground / first plane", 4000, True),
+        LayerSlot(2, "Layer 2", "Second plane", 3000, True),
+        LayerSlot(3, "Layer 3", "Optional background", 2000, True),
+        LayerSlot(4, "Layer 4", "Optional deeper background", 1000, True),
+    ]
 
 
 @dataclass
@@ -30,6 +68,7 @@ class ComposerLayer:
     id: str = field(default_factory=lambda: str(uuid4()))
     name: str = "Layer"
     layer_type: str = "empty"
+    layer_slot: int = 2
     source_path: str | None = None
     x: float = 0
     y: float = 0
@@ -38,7 +77,8 @@ class ComposerLayer:
     scale: float = 1.0
     rotation: float = 0.0
     opacity: float = 1.0
-    z_index: int = 0
+    local_z_index: int = 0
+    computed_z_index: int | None = None
     locked: bool = False
     visible: bool = True
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -46,6 +86,21 @@ class ComposerLayer:
     def __post_init__(self):
         if self.layer_type not in LAYER_TYPES:
             raise ValueError(f"unsupported layer type: {self.layer_type}")
+        self.layer_slot = validate_layer_slot(self.layer_slot)
+        self.recompute_z_index()
+
+    @property
+    def z_index(self) -> int:
+        return self.computed_z_index or compute_z_index(self.layer_slot, self.local_z_index)
+
+    @z_index.setter
+    def z_index(self, value: int):
+        self.computed_z_index = int(value)
+        self.local_z_index = int(value) - SLOT_Z_BASES.get(self.layer_slot, 0)
+
+    def recompute_z_index(self) -> int:
+        self.computed_z_index = compute_z_index(self.layer_slot, self.local_z_index)
+        return self.computed_z_index
 
     @property
     def type(self) -> str:
@@ -93,7 +148,9 @@ class ComposerLayer:
         self.metadata["mode"] = value
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["computed_z_index"] = self.z_index
+        return payload
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ComposerLayer":
@@ -102,6 +159,10 @@ class ComposerLayer:
             normalized["layer_type"] = normalized.pop("type")
         if "path" in normalized and "source_path" not in normalized:
             normalized["source_path"] = normalized.pop("path")
+        if "z_index" in normalized:
+            z_index = int(normalized.pop("z_index"))
+            normalized.setdefault("layer_slot", 2)
+            normalized.setdefault("local_z_index", z_index - SLOT_Z_BASES.get(int(normalized["layer_slot"]), 3000))
         return cls(**normalized)
 
 
@@ -113,6 +174,7 @@ WebcamLayer = ComposerLayer
 class StudioComposerScene:
     project_id: str = field(default_factory=lambda: str(uuid4()))
     canvas: Canvas = field(default_factory=Canvas)
+    layer_slots: list[LayerSlot] = field(default_factory=create_default_layer_slots)
     layers: list[ComposerLayer] = field(default_factory=list)
     selected_layer_id: str | None = None
     locked: bool = False
@@ -124,7 +186,7 @@ class StudioComposerScene:
         for layer in self.layers:
             if layer.layer_type in {"image", "video", "empty"}:
                 return layer
-        layer = ComposerLayer(name="Empty Base", layer_type="empty", z_index=0, locked=self.locked)
+        layer = ComposerLayer(name="Empty Base", layer_type="empty", layer_slot=4, locked=self.locked)
         self.layers.insert(0, layer)
         self.selected_layer_id = self.selected_layer_id or layer.id
         return layer
@@ -145,12 +207,13 @@ class StudioComposerScene:
         layer = ComposerLayer(
             name="Webcam",
             layer_type="webcam",
+            layer_slot=1,
             source_path=None,
             x=900,
             y=420,
             width=320,
             height=240,
-            z_index=99,
+            local_z_index=0,
             visible=False,
             metadata={
                 "camera_id": 0,
@@ -182,9 +245,12 @@ class StudioComposerScene:
         return next((layer for layer in self.layers if layer.id == self.selected_layer_id), None)
 
     def to_dict(self) -> dict[str, Any]:
+        for layer in self.layers:
+            layer.recompute_z_index()
         return {
             "project_id": self.project_id,
             "canvas": self.canvas.to_dict(),
+            "layer_slots": [slot.to_dict() for slot in self.layer_slots],
             "layers": [layer.to_dict() for layer in sorted(self.layers, key=lambda item: item.z_index)],
             "base_layer": self.base_layer.to_dict(),
             "webcam_layer": self.webcam_layer.to_dict(),
@@ -209,6 +275,7 @@ class StudioComposerScene:
                 webcam_data.setdefault("layer_type", "webcam")
                 webcam_data.setdefault("name", "Webcam")
                 webcam_data.setdefault("source_path", None)
+                webcam_data.setdefault("layer_slot", 1)
                 webcam_data.setdefault(
                     "metadata",
                     {
@@ -218,9 +285,11 @@ class StudioComposerScene:
                     },
                 )
                 layers.append(ComposerLayer.from_dict(webcam_data))
+        slots = [LayerSlot.from_dict(slot) for slot in data.get("layer_slots", [])] or create_default_layer_slots()
         return cls(
             project_id=data["project_id"],
             canvas=Canvas(**data.get("canvas", {})),
+            layer_slots=slots,
             layers=layers,
             selected_layer_id=data.get("selected_layer_id"),
             locked=bool(data.get("locked", False)),

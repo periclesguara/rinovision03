@@ -224,6 +224,7 @@ def run_studio_composer_demo_multilayer():
     print(f"project_id: {result['project_id']}")
     print(f"layout_path: {result['layout_path']}")
     print(f"layer_count: {result['layer_count']}")
+    print(f"active_slots: {', '.join(str(slot) for slot in result['active_slots'])}")
     print("recording: not enabled")
     return 0
 

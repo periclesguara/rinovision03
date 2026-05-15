@@ -147,6 +147,8 @@ Healthcheck reports the controller import status and dependency status without p
 
 Upgraded. `rinovision/studio_composer/` now supports the pre-recording multilayer composition stage:
 
+- OBS-style numbered layer slots
+- Layer 1 foreground, Layer 2 second plane, Layer 3 optional background, Layer 4 deeper background
 - multiple image layers
 - multiple video layers with first-frame preview plus selected-layer play/pause
 - empty canvas fallback
@@ -157,6 +159,10 @@ Upgraded. `rinovision/studio_composer/` now supports the pre-recording multilaye
 - complete scene JSON persistence under `data/studio_composer/layouts/`
 - PySide6 QGraphicsView UI module for manual use
 - headless demo layout commands for tests and CI
+
+Empty slots are allowed. Webcam, image, and video sources can be assigned to any slot. Lock freezes final positions, sizes, slots, and z-order before any future recording step.
+
+Layer slots are depth slots only, not screen quadrants. Sources in Layer 1, 2, 3, or 4 remain freely movable anywhere on the canvas unless locked.
 
 No recording was added in this step. Healthcheck imports Studio Composer and verifies storage without opening a GUI or camera.
 
@@ -179,7 +185,7 @@ Acceptance after Studio Composer:
 
 - `python scripts/rinovision_healthcheck.py`: passed
 - `python -m compileall rinovision scripts tests managers windows`: passed
-- `pytest -q`: 61 passed
+- `pytest -q`: 92 passed
 - `python main.py --healthcheck`: passed
 - `python main.py --ai-video-demo`: passed
 - `python main.py --editing-demo`: passed

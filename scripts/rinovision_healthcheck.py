@@ -126,6 +126,7 @@ def studio_composer_capability() -> dict:
     webcam_enhancement_status = import_status("rinovision.studio_composer.webcam_enhancement")
     ui_status = import_status("rinovision.studio_composer.ui.studio_window")
     storage_status = {"ok": False}
+    layer_slots_status = {"ok": False}
     try:
         from rinovision.studio_composer.storage import get_studio_root, studio_path
 
@@ -140,6 +141,23 @@ def studio_composer_capability() -> dict:
         }
     except Exception as exc:
         storage_status = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+    try:
+        from rinovision.studio_composer.controller import StudioComposerController
+
+        controller = StudioComposerController("healthcheck-layer-slots")
+        z_order = [
+            controller.compute_z_index(1),
+            controller.compute_z_index(2),
+            controller.compute_z_index(3),
+            controller.compute_z_index(4),
+        ]
+        layer_slots_status = {
+            "ok": len(controller.scene.layer_slots) == 4 and z_order == sorted(z_order, reverse=True),
+            "slot_count": len(controller.scene.layer_slots),
+            "z_order": z_order,
+        }
+    except Exception as exc:
+        layer_slots_status = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
     qgraphics_support = False
     if importlib.util.find_spec("PySide6") is not None:
         try:
@@ -157,6 +175,7 @@ def studio_composer_capability() -> dict:
         "webcam_enhancement_import": webcam_enhancement_status,
         "ui_import": ui_status,
         "storage": storage_status,
+        "layer_slots": layer_slots_status,
         "pyside6_available": importlib.util.find_spec("PySide6") is not None,
         "qgraphicsview_available": qgraphics_support,
         "camera_probe_run": False,
@@ -265,6 +284,7 @@ def main() -> int:
     print(f"studio composer video preview: {'yes' if studio['video_preview_import']['ok'] else 'no'}")
     print(f"studio composer video playback: {'yes' if studio['video_playback_import']['ok'] else 'no'}")
     print(f"studio composer webcam enhancement: {'yes' if studio['webcam_enhancement_import']['ok'] else 'no'}")
+    print(f"studio composer layer slots: {'yes' if studio['layer_slots'].get('ok') else 'no'}")
     print(f"studio composer storage: {'yes' if studio['storage'].get('ok') else 'no'}")
     print(f"studio composer QGraphicsView: {'yes' if studio.get('qgraphicsview_available') else 'no'}")
     print(f"report: {report['report_path']}")

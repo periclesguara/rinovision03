@@ -19,14 +19,33 @@ Recording is intentionally not part of this module yet.
 - `controller.py`: headless orchestration, layer operations, z-order, and demo scene creation.
 - `ui/`: optional PySide6 QGraphicsView screen.
 
+## OBS-Style Layer Slots
+
+The composer uses numbered slots like a simplified OBS stack:
+
+- Layer 1 is foreground and renders above all other slots.
+- Layer 2 is the second plane and renders behind Layer 1.
+- Layer 3 is an optional background and renders behind Layer 2.
+- Layer 4 is an optional deeper background and renders behind Layer 3.
+
+Webcam, image, video, and future text/annotation sources can be assigned to any layer slot. Empty slots are valid. Multiple sources per slot are allowed; `local_z_index` controls order inside that slot.
+
+Layer slots are not spatial quadrants. They do not constrain a source to a region of the canvas. Slot choice controls visual stacking only; `x` and `y` control position on the canvas.
+
+Examples:
+
+- Commentary over video: Layer 1 webcam, Layer 2 video.
+- Commentary over image: Layer 1 webcam, Layer 2 image, Layer 3 background.
+- Rich composition: Layer 1 logo, Layer 2 webcam, Layer 3 main video, Layer 4 background.
+
 ## Layer Model
 
 The scene contains:
 
+- four OBS-style layer slots
 - optional primary base layer
-- multiple image layers
-- multiple video layers
-- one webcam layer
+- multiple image/video sources
+- one webcam source
 - future text/annotation layers
 
 Each layer stores:
@@ -34,10 +53,12 @@ Each layer stores:
 - `id`
 - `name`
 - `layer_type`
+- `layer_slot`
 - `source_path`
 - transform values: `x`, `y`, `width`, `height`, `scale`, `rotation`
 - `opacity`
-- `z_index`
+- `local_z_index`
+- `computed_z_index`
 - `locked`
 - `visible`
 - `metadata`
@@ -55,11 +76,21 @@ Layouts are saved under `data/studio_composer/layouts/`:
     "aspect_ratio": "16:9",
     "background_color": "#000000"
   },
+  "layer_slots": [
+    {
+      "slot_number": 1,
+      "name": "Layer 1",
+      "description": "Foreground / first plane",
+      "z_base": 4000,
+      "enabled": true
+    }
+  ],
   "layers": [
     {
       "id": "...",
       "name": "Image 1",
       "layer_type": "image",
+      "layer_slot": 2,
       "source_path": "...",
       "x": 100,
       "y": 80,
@@ -68,7 +99,8 @@ Layouts are saved under `data/studio_composer/layouts/`:
       "scale": 1.0,
       "rotation": 0.0,
       "opacity": 1.0,
-      "z_index": 1,
+      "local_z_index": 0,
+      "computed_z_index": 3000,
       "locked": false,
       "visible": true,
       "metadata": {}
@@ -98,12 +130,14 @@ python main.py --studio-composer
 
 - Upload Image supports repeated uploads and multi-select.
 - Upload Video supports repeated uploads and multi-select.
+- Media slot and webcam slot controls assign sources to Layer 1, 2, 3, or 4.
+- Move Slot moves the selected source to a new slot and recomputes visual stacking.
 - Video layers use first-frame preview on upload.
 - `Play/Pause` starts or pauses the selected video layer with a controlled QTimer.
 - Layers are selectable and draggable.
 - `Scale +` and `Scale -` resize the selected image, video, or webcam layer.
 - Webcam image controls adjust brightness, contrast, saturation, mirror mode, and reset for the selected webcam layer.
-- Forward/Backward changes selected layer `z_index`.
+- Forward/Backward changes selected layer `local_z_index` within its current slot.
 - Lock freezes all current layers and saves the scene.
 - Unlock allows editing again.
 - Reset Layer resets only the selected layer transform.

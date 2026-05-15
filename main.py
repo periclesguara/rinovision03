@@ -67,6 +67,11 @@ def parse_args(argv=None):
         help="create a multilayer Studio Composer demo scene without opening GUI",
     )
     parser.add_argument(
+        "--studio-composer-debug-scene",
+        action="store_true",
+        help="create and print a Studio Composer OBS-style layer slot debug scene without opening GUI",
+    )
+    parser.add_argument(
         "--camera-id",
         type=int,
         default=0,
@@ -228,6 +233,28 @@ def run_studio_composer_demo_multilayer():
     print("recording: not enabled")
     return 0
 
+
+def run_studio_composer_debug_scene():
+    from rinovision.studio_composer import create_debug_scene
+
+    result = create_debug_scene()
+    print("Studio Composer debug scene complete")
+    print(f"project_id: {result['project_id']}")
+    print(f"layout_path: {result['layout_path']}")
+    for layer in sorted(result["layers"], key=lambda item: item["computed_z_index"], reverse=True):
+        print(
+            "layer: "
+            f"id={layer['id']} "
+            f"name={layer['name']} "
+            f"slot={layer['layer_slot']} "
+            f"x={layer['x']} y={layer['y']} "
+            f"width={layer['width']} height={layer['height']} "
+            f"z={layer['computed_z_index']}"
+        )
+    print(f"z_order_valid: {'yes' if result['z_order_valid'] else 'no'}")
+    print("recording: not enabled")
+    return 0 if result["z_order_valid"] else 1
+
 if __name__ == "__main__":
     args = parse_args()
     if args.healthcheck:
@@ -246,6 +273,8 @@ if __name__ == "__main__":
         sys.exit(run_studio_composer_demo_layout())
     if args.studio_composer_demo_multilayer:
         sys.exit(run_studio_composer_demo_multilayer())
+    if args.studio_composer_debug_scene:
+        sys.exit(run_studio_composer_debug_scene())
     if args.studio_composer:
         sys.exit(run_studio_composer())
     if args.safe_foundation or args.safe_mode:

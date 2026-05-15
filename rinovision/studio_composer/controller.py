@@ -258,3 +258,15 @@ def create_demo_multilayer(project_id: str | None = None) -> dict:
         "active_slots": active_slots,
         "layout": controller.scene.to_dict(),
     }
+
+
+def create_debug_scene(project_id: str | None = None) -> dict:
+    result = create_demo_multilayer(project_id)
+    layers = result["layout"]["layers"]
+    by_slot = {layer["layer_slot"]: layer["computed_z_index"] for layer in layers}
+    z_order_valid = by_slot.get(1, 0) > by_slot.get(2, 0) > by_slot.get(3, 0) > 1000
+    return {
+        **result,
+        "layers": layers,
+        "z_order_valid": z_order_valid,
+    }

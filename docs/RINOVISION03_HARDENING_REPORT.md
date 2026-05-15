@@ -154,15 +154,19 @@ Upgraded. `rinovision/studio_composer/` now supports the pre-recording multilaye
 - empty canvas fallback
 - independent webcam overlay controller using the existing safe webcam lifecycle
 - webcam enhancement settings for brightness, contrast, saturation, mirror, gamma placeholder, and reset
-- selected-layer move/scale/order metadata
+- selected-layer move/direct-resize/scale/order metadata
+- explicit image, video, webcam, and selected-layer slot controls wired to real `QGraphicsItem` z-order
+- visible direct resize handles for selected image/video canvas items
 - layout lock/unlock behavior
 - complete scene JSON persistence under `data/studio_composer/layouts/`
 - PySide6 QGraphicsView UI module for manual use
-- headless demo layout commands for tests and CI
+- headless demo and debug layout commands for tests and CI
 
 Empty slots are allowed. Webcam, image, and video sources can be assigned to any slot. Lock freezes final positions, sizes, slots, and z-order before any future recording step.
 
 Layer slots are depth slots only, not screen quadrants. Sources in Layer 1, 2, 3, or 4 remain freely movable anywhere on the canvas unless locked.
+
+Changing a selected source from one layer slot to another preserves its `x`/`y` position and updates `computed_z_index` plus the live `QGraphicsItem.setZValue()`. Lock blocks movement, direct resize, and layer slot changes.
 
 No recording was added in this step. Healthcheck imports Studio Composer and verifies storage without opening a GUI or camera.
 
@@ -185,7 +189,7 @@ Acceptance after Studio Composer:
 
 - `python scripts/rinovision_healthcheck.py`: passed
 - `python -m compileall rinovision scripts tests managers windows`: passed
-- `pytest -q`: 92 passed
+- `pytest -q`: 101 passed
 - `python main.py --healthcheck`: passed
 - `python main.py --ai-video-demo`: passed
 - `python main.py --editing-demo`: passed
@@ -193,6 +197,7 @@ Acceptance after Studio Composer:
 - `python main.py --webcam-probe`: passed
 - `python main.py --studio-composer-demo-layout`: passed
 - `python main.py --studio-composer-demo-multilayer`: passed
+- `python main.py --studio-composer-debug-scene`: passed
 
 ## Music Manager Import Side Effect
 

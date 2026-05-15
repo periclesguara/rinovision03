@@ -32,8 +32,10 @@ class StudioComposerWindow(QWidget if QWidget else object):
         self.video_players = {}
         self.canvas = StudioCanvasView(self)
         self.canvas.movement_callback = self.on_layer_moved
+        self.canvas.resize_callback = self.on_layer_resized
         self.inspector = InspectorPanel(self)
         self.layer_panel = QLabel("")
+        self._syncing_slot_combo = False
         self._build_ui()
         self.canvas.scene.selectionChanged.connect(self.on_selection_changed)
         self._refresh_layer_panel()
@@ -43,21 +45,24 @@ class StudioComposerWindow(QWidget if QWidget else object):
         root = QHBoxLayout(self)
         left = QVBoxLayout()
         toolbar = QHBoxLayout()
-        self.media_slot_select = self._make_slot_select(default_slot=2)
-        self.webcam_slot_select = self._make_slot_select(default_slot=1)
-        self.selected_slot_select = self._make_slot_select(default_slot=1)
-        toolbar.addWidget(QLabel("Media Slot"))
-        toolbar.addWidget(self.media_slot_select)
-        toolbar.addWidget(QLabel("Webcam Slot"))
-        toolbar.addWidget(self.webcam_slot_select)
-        toolbar.addWidget(QLabel("Selected Slot"))
-        toolbar.addWidget(self.selected_slot_select)
+        self.image_layer_slot_combo = self._make_slot_select(default_slot=2)
+        self.video_layer_slot_combo = self._make_slot_select(default_slot=2)
+        self.webcam_layer_slot_combo = self._make_slot_select(default_slot=1)
+        self.selected_layer_slot_combo = self._make_slot_select(default_slot=1)
+        self.selected_layer_slot_combo.currentIndexChanged.connect(self.on_selected_slot_changed)
+        toolbar.addWidget(QLabel("Image Layer"))
+        toolbar.addWidget(self.image_layer_slot_combo)
+        toolbar.addWidget(QLabel("Video Layer"))
+        toolbar.addWidget(self.video_layer_slot_combo)
+        toolbar.addWidget(QLabel("Webcam Layer"))
+        toolbar.addWidget(self.webcam_layer_slot_combo)
+        toolbar.addWidget(QLabel("Selected Layer"))
+        toolbar.addWidget(self.selected_layer_slot_combo)
         buttons = [
             ("Upload Image", self.upload_images),
             ("Upload Video", self.upload_videos),
             ("Play/Pause", self.toggle_selected_video_playback),
             ("Webcam", self.toggle_webcam),
-            ("Move Slot", self.move_selected_to_slot),
             ("Bright +", self.webcam_brightness_up),
             ("Bright -", self.webcam_brightness_down),
             ("Contrast +", self.webcam_contrast_up),
@@ -94,19 +99,22 @@ class StudioComposerWindow(QWidget if QWidget else object):
             combo.setCurrentIndex(index)
         return combo
 
-    def _selected_media_slot(self) -> int:
-        return int(self.media_slot_select.currentData())
+    def _selected_image_slot(self) -> int:
+        return int(self.image_layer_slot_combo.currentData())
+
+    def _selected_video_slot(self) -> int:
+        return int(self.video_layer_slot_combo.currentData())
 
     def _selected_webcam_slot(self) -> int:
-        return int(self.webcam_slot_select.currentData())
+        return int(self.webcam_layer_slot_combo.currentData())
 
     def _selected_target_slot(self) -> int:
-        return int(self.selected_slot_select.currentData())
+        return int(self.selected_layer_slot_combo.currentData())
 
     def upload_images(self):
         paths, _ = QFileDialog.getOpenFileNames(self, "Select image", "", "Images (*.png *.jpg *.jpeg *.webp)")
         for path in paths:
-            layer = self.controller.add_image_layer(path, layer_slot=self._selected_media_slot())
+            layer = self.controller.add_image_layer(path, layer_slot=self._selected_image_slot())
             self.canvas.add_layer_pixmap(layer, QPixmap(layer.source_path))
             self.canvas.items_by_layer_id[layer.id].setZValue(layer.computed_z_index)
         self._refresh_layer_panel()
@@ -115,7 +123,7 @@ class StudioComposerWindow(QWidget if QWidget else object):
     def upload_videos(self):
         paths, _ = QFileDialog.getOpenFileNames(self, "Select video", "", "Videos (*.mp4 *.mov *.mkv *.webm)")
         for path in paths:
-            layer = self.controller.add_video_layer(path, layer_slot=self._selected_media_slot())
+            layer = self.controller.add_video_layer(path, layer_slot=self._selected_video_slot())
             layer.metadata["playback"] = "paused"
             preview = create_video_preview_frame(layer.source_path, self.controller.scene.project_id)
             if preview.get("ok") and preview.get("preview_path"):
@@ -216,6 +224,24 @@ class StudioComposerWindow(QWidget if QWidget else object):
         if self.controller.scene.selected_layer_id == layer_id:
             self._refresh_inspector(layer_id)
 
+    def on_layer_resized(self, layer_id: str, width: float, height: float):
+        try:
+            layer = self.controller.resize_layer(layer_id, width, height)
+        except ValueError:
+            item = self.canvas.items_by_layer_id.get(layer_id)
+            layer = next((candidate for candidate in self.controller.scene.layers if candidate.id == layer_id), None)
+            if item is not None and layer is not None and hasattr(item, "_apply_size"):
+                item._apply_size(int(layer.width), int(layer.height))
+            return
+        if layer.metadata.get("stable_frame_size"):
+            layer.metadata["frame_width"] = width
+            layer.metadata["frame_height"] = height
+        item = self.canvas.items_by_layer_id.get(layer_id)
+        if item is not None:
+            item.setZValue(layer.computed_z_index)
+        if self.controller.scene.selected_layer_id == layer_id:
+            self._refresh_inspector(layer_id)
+
     def bring_selected_forward(self):
         layer_id = self.canvas.selected_layer_id()
         if not layer_id:
@@ -239,12 +265,20 @@ class StudioComposerWindow(QWidget if QWidget else object):
         try:
             layer = self.controller.move_layer_to_slot(layer_id, self._selected_target_slot())
         except ValueError:
+            layer = next((item for item in self.controller.scene.layers if item.id == layer_id), None)
+            if layer is not None:
+                self._set_selected_slot_combo(layer.layer_slot)
             return
         item = self.canvas.items_by_layer_id.get(layer.id)
         if item is not None:
             item.setZValue(layer.computed_z_index)
         self._refresh_layer_panel()
         self._refresh_inspector(layer.id)
+
+    def on_selected_slot_changed(self, *_args):
+        if self._syncing_slot_combo:
+            return
+        self.move_selected_to_slot()
 
     def scale_selected_up(self):
         self.scale_selected(1.1)
@@ -324,17 +358,13 @@ class StudioComposerWindow(QWidget if QWidget else object):
         self.canvas.sync_all_layers(self.controller.scene.layers)
         self.controller.lock_scene()
         self.canvas.lock_items(True)
-        self.media_slot_select.setEnabled(False)
-        self.webcam_slot_select.setEnabled(False)
-        self.selected_slot_select.setEnabled(False)
+        self._set_slot_controls_enabled(False)
         self._refresh_inspector(self.controller.scene.selected_layer_id)
 
     def unlock_layout(self):
         self.controller.unlock_scene()
         self.canvas.lock_items(False)
-        self.media_slot_select.setEnabled(True)
-        self.webcam_slot_select.setEnabled(True)
-        self.selected_slot_select.setEnabled(True)
+        self._set_slot_controls_enabled(True)
         self._refresh_inspector(self.controller.scene.selected_layer_id)
 
     def reset_selected_layer(self):
@@ -359,6 +389,7 @@ class StudioComposerWindow(QWidget if QWidget else object):
             self.inspector.update_values({})
             return
         self.canvas.sync_layer_geometry(layer)
+        self._set_selected_slot_combo(layer.layer_slot)
         self.inspector.update_values(
             {
                 "layer_id": layer.id,
@@ -387,6 +418,20 @@ class StudioComposerWindow(QWidget if QWidget else object):
             names = ", ".join(layer.name for layer in layers) if layers else "empty"
             lines.append(f"{slot.name} - {slot.description}: {names}")
         self.layer_panel.setText("\n".join(lines))
+
+    def _set_selected_slot_combo(self, layer_slot: int):
+        index = self.selected_layer_slot_combo.findData(layer_slot)
+        if index < 0:
+            return
+        self._syncing_slot_combo = True
+        self.selected_layer_slot_combo.setCurrentIndex(index)
+        self._syncing_slot_combo = False
+
+    def _set_slot_controls_enabled(self, enabled: bool):
+        self.image_layer_slot_combo.setEnabled(enabled)
+        self.video_layer_slot_combo.setEnabled(enabled)
+        self.webcam_layer_slot_combo.setEnabled(enabled)
+        self.selected_layer_slot_combo.setEnabled(enabled)
 
     def closeEvent(self, event):
         self.timer.stop()

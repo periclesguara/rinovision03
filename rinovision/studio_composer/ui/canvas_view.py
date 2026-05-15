@@ -20,6 +20,7 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         self.setBackgroundBrush(QColor(18, 20, 24))
         self.items_by_layer_id = {}
         self.movement_callback = None
+        self.resize_callback = None
         self.fitInView(self.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
     def resizeEvent(self, event):
@@ -28,7 +29,13 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
 
     def add_layer_pixmap(self, layer, pixmap):
         pixmap = self._fit_pixmap_to_layer(pixmap, layer)
-        item = MovablePixmapItem(pixmap, layer_id=layer.id, layer_name=layer.name, movement_callback=self.movement_callback)
+        item = MovablePixmapItem(
+            pixmap,
+            layer_id=layer.id,
+            layer_name=layer.name,
+            movement_callback=self.movement_callback,
+            resize_callback=self.resize_callback,
+        )
         self._configure_item(item, layer)
         self.scene.addItem(item)
         self.items_by_layer_id[layer.id] = item
@@ -48,6 +55,7 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
             layer_id=layer.id,
             layer_name=layer.name,
             movement_callback=self.movement_callback,
+            resize_callback=self.resize_callback,
         )
         self._configure_item(item, layer)
         self.scene.addItem(item)
@@ -103,12 +111,12 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         item = self.items_by_layer_id.get(layer.id)
         if item is None:
             return layer
-        rect = item.boundingRect()
+        width, height = item.content_size() if hasattr(item, "content_size") else (item.boundingRect().width(), item.boundingRect().height())
         layer.x = item.x()
         layer.y = item.y()
         if not layer.metadata.get("stable_frame_size"):
-            layer.width = rect.width()
-            layer.height = rect.height()
+            layer.width = width
+            layer.height = height
         layer.scale = item.scale()
         layer.rotation = item.rotation()
         layer.computed_z_index = int(item.zValue())
@@ -122,6 +130,15 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         new_scale = max(0.05, min(10.0, item.scale() * factor))
         item.setScale(new_scale)
         layer.scale = new_scale
+        return self.sync_layer_geometry(layer)
+
+    def resize_layer_item(self, layer, width: float, height: float):
+        item = self.items_by_layer_id.get(layer.id)
+        if item is None or getattr(item, "locked", False):
+            return layer
+        if hasattr(item, "resize_to") and item.resize_to(width, height):
+            layer.width = width
+            layer.height = height
         return self.sync_layer_geometry(layer)
 
     def sync_all_layers(self, layers):
@@ -140,15 +157,15 @@ class StudioCanvasView(QGraphicsView if QGraphicsView else object):
         item = self.items_by_layer_id.get(layer_id)
         if item is None:
             return {}
-        rect = item.boundingRect()
+        width, height = item.content_size() if hasattr(item, "content_size") else (item.boundingRect().width(), item.boundingRect().height())
         return {
             "x": item.x(),
             "y": item.y(),
-            "width": rect.width(),
-            "height": rect.height(),
+            "width": width,
+            "height": height,
             "scale": item.scale(),
-            "display_width": rect.width() * item.scale(),
-            "display_height": rect.height() * item.scale(),
+            "display_width": width * item.scale(),
+            "display_height": height * item.scale(),
             "rotation": item.rotation(),
             "computed_z_index": int(item.zValue()),
         }

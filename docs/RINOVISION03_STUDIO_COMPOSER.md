@@ -130,17 +130,22 @@ python main.py --studio-composer
 
 - Upload Image supports repeated uploads and multi-select.
 - Upload Video supports repeated uploads and multi-select.
-- Media slot and webcam slot controls assign sources to Layer 1, 2, 3, or 4.
-- Move Slot moves the selected source to a new slot and recomputes visual stacking.
+- Image layer, video layer, and webcam layer controls assign new sources to Layer 1, 2, 3, or 4.
+- Selected Layer control moves the selected source to a new slot and recomputes visual stacking immediately.
+- Slot changes update the selected `QGraphicsItem` z-order and preserve the source `x`/`y` position.
 - Video layers use first-frame preview on upload.
 - `Play/Pause` starts or pauses the selected video layer with a controlled QTimer.
 - Layers are selectable and draggable.
+- Selected image and video layers show direct corner resize handles on the canvas.
+- Direct resize updates `width` and `height` in the model, inspector, and saved layout.
 - `Scale +` and `Scale -` resize the selected image, video, or webcam layer.
 - Webcam image controls adjust brightness, contrast, saturation, mirror mode, and reset for the selected webcam layer.
 - Forward/Backward changes selected layer `local_z_index` within its current slot.
 - Lock freezes all current layers and saves the scene.
 - Unlock allows editing again.
 - Reset Layer resets only the selected layer transform.
+
+Lock blocks movement, direct resize, and layer slot changes. Unlock restores editability.
 
 ## Webcam Enhancement
 

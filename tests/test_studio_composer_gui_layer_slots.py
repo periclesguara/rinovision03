@@ -14,7 +14,12 @@ from rinovision.studio_composer.ui.studio_window import StudioComposerWindow
 
 @pytest.fixture
 def qapp():
-    return QApplication.instance() or QApplication([])
+    app = QApplication.instance() or QApplication([])
+    yield app
+    for widget in app.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    app.processEvents()
 
 
 def _add_placeholder(window, layer):

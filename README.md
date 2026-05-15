@@ -173,6 +173,12 @@ python main.py --studio-composer-debug-scene
 python main.py --studio-composer
 ```
 
-The demo and debug layout commands are headless and safe for CI. The GUI command opens the PySide6 Studio Composer window. Image/video uploads are copied into `data/studio_composer/uploads/`; video layers show a first-frame preview and can be played/paused with the selected-layer `Play/Pause` control. Slot dropdowns change actual source depth through `QGraphicsItem.setZValue()` while preserving `x`/`y`. This module does not record video yet; it saves layout metadata under `data/studio_composer/layouts/`. Webcam preview still follows the controlled lifecycle and opens only after the user enables it in the composer.
+The demo and debug layout commands are headless and safe for CI. The GUI command opens the PySide6 Studio Composer window. Image/video uploads are copied into `data/studio_composer/uploads/`; video layers show a first-frame preview and can be played/paused with the selected-layer `Play/Pause` control. Image, video, webcam, and selected-source slot dropdowns now update the actual canvas item depth through `QGraphicsItem.setZValue()` while preserving `x`/`y`. Canvas repaint is configured conservatively so moving/resizing layers should not leave ghost trails or stale dotted marks. This module does not record video yet; it saves layout metadata under `data/studio_composer/layouts/`. Webcam preview still follows the controlled lifecycle and opens only after the user enables it in the composer.
+
+For layer assignment debugging, launch with:
+
+```bash
+RINOVISION_STUDIO_DEBUG=1 python main.py --studio-composer
+```
 
 Webcam enhancement controls are available for the selected webcam layer: `Bright +`, `Bright -`, `Contrast +`, `Contrast -`, `Sat +`, `Sat -`, `Mirror`, and `Reset Cam`. These are software adjustments. Lighting still matters: use soft front light, avoid backlight, keep the camera near eye level, use a clean background, and avoid strong shadows.

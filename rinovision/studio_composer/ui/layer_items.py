@@ -15,6 +15,7 @@ def require_pyside():
 
 class _LayerMixin:
     HANDLE_SIZE = 10
+    PAINT_PADDING = 14
     MIN_SIZE = 24
 
     def configure_layer(self, layer_id: str, layer_name: str, movement_callback=None, resize_callback=None):
@@ -33,6 +34,10 @@ class _LayerMixin:
         self.setFlag(self.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(self.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setAcceptHoverEvents(True)
+        try:
+            self.setCacheMode(self.CacheMode.NoCache)
+        except AttributeError:
+            pass
 
     def set_locked(self, locked: bool):
         self.locked = locked
@@ -48,10 +53,25 @@ class _LayerMixin:
             and not self._resize_corner
         ):
             self.movement_callback(self.layer_id, value.x(), value.y())
+            self.update()
+            scene = self.scene()
+            if scene is not None:
+                scene.update()
+        if change == self.GraphicsItemChange.ItemSelectedHasChanged:
+            self.update()
+            scene = self.scene()
+            if scene is not None:
+                scene.update()
         return super().itemChange(change, value)
 
+    def padded_bounding_rect(self):
+        return self.content_rect().adjusted(-self.PAINT_PADDING, -self.PAINT_PADDING, self.PAINT_PADDING, self.PAINT_PADDING)
+
+    def content_rect(self):
+        return super().boundingRect()
+
     def _corner_rects(self):
-        rect = self.boundingRect()
+        rect = self.content_rect()
         size = self.HANDLE_SIZE
         half = size / 2
         return {
@@ -123,10 +143,14 @@ class _LayerMixin:
             return False
         width = max(self.MIN_SIZE, int(width))
         height = max(self.MIN_SIZE, int(height))
+        self.prepareGeometryChange()
         self._apply_size(width, height)
         if self.resize_callback:
             self.resize_callback(self.layer_id, width, height)
         self.update()
+        scene = self.scene()
+        if scene is not None:
+            scene.update()
         return True
 
     def _resize_from_scene_pos(self, scene_pos):
@@ -163,7 +187,7 @@ class _LayerMixin:
         raise NotImplementedError
 
     def content_size(self):
-        rect = self.boundingRect()
+        rect = self.content_rect()
         return rect.width(), rect.height()
 
 
@@ -176,6 +200,12 @@ class MovablePixmapItem(_LayerMixin, QGraphicsPixmapItem if QGraphicsPixmapItem 
     def paint(self, painter, option, widget=None):
         super().paint(painter, option, widget)
         self.paint_resize_handles(painter)
+
+    def boundingRect(self):
+        return self.padded_bounding_rect()
+
+    def content_rect(self):
+        return QGraphicsPixmapItem.boundingRect(self)
 
     def _current_pixmap(self):
         return self.pixmap()
@@ -197,6 +227,12 @@ class PlaceholderLayerItem(_LayerMixin, QGraphicsRectItem if QGraphicsRectItem e
     def paint(self, painter, option, widget=None):
         super().paint(painter, option, widget)
         self.paint_resize_handles(painter)
+
+    def boundingRect(self):
+        return self.padded_bounding_rect()
+
+    def content_rect(self):
+        return self.rect()
 
     def _apply_size(self, width: int, height: int):
         self.setRect(QRectF(0, 0, width, height))

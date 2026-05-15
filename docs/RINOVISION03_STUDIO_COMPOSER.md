@@ -132,7 +132,9 @@ python main.py --studio-composer
 - Upload Video supports repeated uploads and multi-select.
 - Image layer, video layer, and webcam layer controls assign new sources to Layer 1, 2, 3, or 4.
 - Selected Layer control moves the selected source to a new slot and recomputes visual stacking immediately.
-- Slot changes update the selected `QGraphicsItem` z-order and preserve the source `x`/`y` position.
+- Slot changes update the selected `QGraphicsItem` z-order with `setZValue(computed_z_index)` and preserve the source `x`/`y` position.
+- The canvas keeps an explicit `layer_id -> QGraphicsItem` mapping so source depth changes update the real visible item.
+- Creation order does not determine visual depth. Layer slot determines depth: an image in Layer 1 appears above a webcam in Layer 2.
 - Video layers use first-frame preview on upload.
 - `Play/Pause` starts or pauses the selected video layer with a controlled QTimer.
 - Layers are selectable and draggable.
@@ -146,6 +148,19 @@ python main.py --studio-composer
 - Reset Layer resets only the selected layer transform.
 
 Lock blocks movement, direct resize, and layer slot changes. Unlock restores editability.
+
+## Repaint Safety
+
+The canvas uses conservative `QGraphicsView` repaint settings to avoid ghost trails, dotted marks, and stale selection outlines while layers are moved or resized.
+
+- `FullViewportUpdate` is used for correctness.
+- View cache is disabled.
+- Movable/resizable layer item cache is disabled.
+- Custom item `boundingRect()` includes padding for selection outlines and resize handles.
+- Resize calls `prepareGeometryChange()` before changing item dimensions.
+- Movement, resize, selection, lock/unlock, and z-order updates request a scene/viewport repaint.
+
+This is a visual GUI fix; manual validation is still recommended on the target desktop graphics stack.
 
 ## Webcam Enhancement
 

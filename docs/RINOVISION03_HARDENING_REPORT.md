@@ -156,7 +156,9 @@ Upgraded. `rinovision/studio_composer/` now supports the pre-recording multilaye
 - webcam enhancement settings for brightness, contrast, saturation, mirror, gamma placeholder, and reset
 - selected-layer move/direct-resize/scale/order metadata
 - explicit image, video, webcam, and selected-layer slot controls wired to real `QGraphicsItem` z-order
+- explicit `layer_id -> QGraphicsItem` mapping for slot/z-order updates in the real GUI
 - visible direct resize handles for selected image/video canvas items
+- conservative QGraphicsView repaint behavior to prevent ghost trails during movement/resize
 - layout lock/unlock behavior
 - complete scene JSON persistence under `data/studio_composer/layouts/`
 - PySide6 QGraphicsView UI module for manual use
@@ -167,6 +169,12 @@ Empty slots are allowed. Webcam, image, and video sources can be assigned to any
 Layer slots are depth slots only, not screen quadrants. Sources in Layer 1, 2, 3, or 4 remain freely movable anywhere on the canvas unless locked.
 
 Changing a selected source from one layer slot to another preserves its `x`/`y` position and updates `computed_z_index` plus the live `QGraphicsItem.setZValue()`. Lock blocks movement, direct resize, and layer slot changes.
+
+The image, video, webcam, and selected-source slot dropdowns now route through explicit GUI helper methods and update the actual canvas item by `layer_id`, not only the JSON/model state.
+
+Regression coverage includes the reported assignment bug: when webcam is assigned to Layer 2 and image is assigned to Layer 1, the image receives a higher `computed_z_index` and higher `QGraphicsItem.zValue()`.
+
+Canvas repaint artifacts were addressed by using `FullViewportUpdate`, disabling view/item cache for movable layers, expanding item bounding rectangles to include resize handles, and calling `prepareGeometryChange()` before resize.
 
 No recording was added in this step. Healthcheck imports Studio Composer and verifies storage without opening a GUI or camera.
 

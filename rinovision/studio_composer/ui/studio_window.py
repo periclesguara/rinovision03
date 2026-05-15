@@ -7,6 +7,8 @@ except ImportError as exc:
     QApplication = QFileDialog = QComboBox = QLabel = QHBoxLayout = QPushButton = QTimer = QVBoxLayout = QWidget = QPixmap = None
     _IMPORT_ERROR = exc
 
+import os
+
 from rinovision.studio_composer.controller import StudioComposerController
 from rinovision.studio_composer.ui.canvas_view import StudioCanvasView
 from rinovision.studio_composer.ui.inspector_panel import InspectorPanel
@@ -36,6 +38,7 @@ class StudioComposerWindow(QWidget if QWidget else object):
         self.inspector = InspectorPanel(self)
         self.layer_panel = QLabel("")
         self._syncing_slot_combo = False
+        self.debug_layer_assignment = os.getenv("RINOVISION_STUDIO_DEBUG") == "1"
         self._build_ui()
         self.canvas.scene.selectionChanged.connect(self.on_selection_changed)
         self._refresh_layer_panel()
@@ -114,25 +117,74 @@ class StudioComposerWindow(QWidget if QWidget else object):
     def upload_images(self):
         paths, _ = QFileDialog.getOpenFileNames(self, "Select image", "", "Images (*.png *.jpg *.jpeg *.webp)")
         for path in paths:
-            layer = self.controller.add_image_layer(path, layer_slot=self._selected_image_slot())
-            self.canvas.add_layer_pixmap(layer, QPixmap(layer.source_path))
-            self.canvas.items_by_layer_id[layer.id].setZValue(layer.computed_z_index)
+            self.add_image_path_to_selected_slot(path)
         self._refresh_layer_panel()
         self._refresh_inspector()
 
     def upload_videos(self):
         paths, _ = QFileDialog.getOpenFileNames(self, "Select video", "", "Videos (*.mp4 *.mov *.mkv *.webm)")
         for path in paths:
-            layer = self.controller.add_video_layer(path, layer_slot=self._selected_video_slot())
-            layer.metadata["playback"] = "paused"
-            preview = create_video_preview_frame(layer.source_path, self.controller.scene.project_id)
-            if preview.get("ok") and preview.get("preview_path"):
-                self.canvas.add_layer_pixmap(layer, QPixmap(preview["preview_path"]))
-            else:
-                self.canvas.add_placeholder_layer(layer)
-            self.canvas.items_by_layer_id[layer.id].setZValue(layer.computed_z_index)
+            self.add_video_path_to_selected_slot(path)
         self._refresh_layer_panel()
         self._refresh_inspector()
+
+    def add_image_path_to_selected_slot(self, path):
+        selected_slot = self._selected_image_slot()
+        layer = self.controller.add_image_layer(path, layer_slot=selected_slot)
+        self.canvas.add_layer_pixmap(layer, QPixmap(layer.source_path))
+        self.canvas.sync_item_z_order(layer)
+        self.canvas.select_layer_item(layer.id)
+        self._debug_source_assignment("image", selected_slot, layer)
+        self._refresh_layer_panel()
+        self._refresh_inspector(layer.id)
+        return layer
+
+    def add_video_path_to_selected_slot(self, path):
+        selected_slot = self._selected_video_slot()
+        layer = self.controller.add_video_layer(path, layer_slot=selected_slot)
+        layer.metadata["playback"] = "paused"
+        preview = create_video_preview_frame(layer.source_path, self.controller.scene.project_id)
+        if preview.get("ok") and preview.get("preview_path"):
+            self.canvas.add_layer_pixmap(layer, QPixmap(preview["preview_path"]))
+        else:
+            self.canvas.add_placeholder_layer(layer)
+        self.canvas.sync_item_z_order(layer)
+        self.canvas.select_layer_item(layer.id)
+        self._debug_source_assignment("video", selected_slot, layer)
+        self._refresh_layer_panel()
+        self._refresh_inspector(layer.id)
+        return layer
+
+    def add_webcam_layer_to_selected_slot(self, enabled: bool = False, camera_id: int = 0):
+        selected_slot = self._selected_webcam_slot()
+        layer = self.controller.add_webcam_layer(
+            enabled=enabled,
+            camera_id=camera_id,
+            mode="free_floating",
+            layer_slot=selected_slot,
+        )
+        item = self.canvas.get_item_by_layer_id(layer.id)
+        if item is not None:
+            item.setVisible(layer.visible)
+            self.canvas.sync_item_z_order(layer)
+            self.canvas.select_layer_item(layer.id)
+        self._debug_source_assignment("webcam", selected_slot, layer)
+        self._refresh_layer_panel()
+        self._refresh_inspector(layer.id)
+        return layer
+
+    def _debug_source_assignment(self, source_type: str, selected_slot: int, layer):
+        if not self.debug_layer_assignment:
+            return
+        item = self.canvas.get_item_by_layer_id(layer.id)
+        z_value = item.zValue() if item is not None else None
+        print(
+            f"Added {source_type}: "
+            f"selected_slot={selected_slot} "
+            f"model.layer_slot={layer.layer_slot} "
+            f"computed_z_index={layer.computed_z_index} "
+            f"item.zValue={z_value}"
+        )
 
     def toggle_selected_video_playback(self):
         layer_id = self.canvas.selected_layer_id()
@@ -184,17 +236,12 @@ class StudioComposerWindow(QWidget if QWidget else object):
         if self.webcam.preview.is_running():
             self.timer.stop()
             self.webcam.stop_preview()
-            layer = self.controller.add_webcam_layer(enabled=False, layer_slot=self._selected_webcam_slot())
-            if layer.id in self.canvas.items_by_layer_id:
-                self.canvas.items_by_layer_id[layer.id].setVisible(False)
-            self._refresh_inspector(layer.id)
+            layer = self.add_webcam_layer_to_selected_slot(enabled=False)
             return
         status = self.webcam.start_preview()
         if status.get("ok"):
-            layer = self.controller.add_webcam_layer(enabled=True, camera_id=0, mode="free_floating", layer_slot=self._selected_webcam_slot())
+            layer = self.add_webcam_layer_to_selected_slot(enabled=True, camera_id=0)
             self.timer.start(33)
-            self._refresh_layer_panel()
-            self._refresh_inspector(layer.id)
 
     def update_webcam_frame(self):
         frame = self.webcam.read_frame()
@@ -207,56 +254,69 @@ class StudioComposerWindow(QWidget if QWidget else object):
         self.canvas.set_webcam_frame(layer, frame_rgb)
 
     def on_selection_changed(self):
+        for item in self.canvas.items_by_layer_id.values():
+            item.update()
         layer_id = self.canvas.selected_layer_id()
         if layer_id:
-            self.controller.select_layer(layer_id)
+            try:
+                self.controller.select_layer(layer_id)
+            except (AttributeError, KeyError):
+                layer_id = None
         self._refresh_inspector(layer_id)
+        self.canvas.request_repaint()
 
     def on_layer_moved(self, layer_id: str, x: float, y: float):
         try:
             self.controller.move_layer(layer_id, x, y)
         except ValueError:
-            item = self.canvas.items_by_layer_id.get(layer_id)
-            layer = next((candidate for candidate in self.controller.scene.layers if candidate.id == layer_id), None)
+            item = self.canvas.get_item_by_layer_id(layer_id)
+            layer = next((candidate for candidate in self.controller.scene.layers if getattr(candidate, "id", None) == layer_id), None)
             if item is not None and layer is not None:
                 item.setPos(layer.x, layer.y)
+                item.update()
+                self.canvas.request_repaint()
             return
         if self.controller.scene.selected_layer_id == layer_id:
             self._refresh_inspector(layer_id)
+        item = self.canvas.get_item_by_layer_id(layer_id)
+        if item is not None:
+            item.update()
+        self.canvas.request_repaint()
 
     def on_layer_resized(self, layer_id: str, width: float, height: float):
         try:
             layer = self.controller.resize_layer(layer_id, width, height)
         except ValueError:
-            item = self.canvas.items_by_layer_id.get(layer_id)
-            layer = next((candidate for candidate in self.controller.scene.layers if candidate.id == layer_id), None)
+            item = self.canvas.get_item_by_layer_id(layer_id)
+            layer = next((candidate for candidate in self.controller.scene.layers if getattr(candidate, "id", None) == layer_id), None)
             if item is not None and layer is not None and hasattr(item, "_apply_size"):
                 item._apply_size(int(layer.width), int(layer.height))
             return
         if layer.metadata.get("stable_frame_size"):
             layer.metadata["frame_width"] = width
             layer.metadata["frame_height"] = height
-        item = self.canvas.items_by_layer_id.get(layer_id)
-        if item is not None:
-            item.setZValue(layer.computed_z_index)
+        self.canvas.sync_item_z_order(layer)
         if self.controller.scene.selected_layer_id == layer_id:
             self._refresh_inspector(layer_id)
+        self.canvas.request_repaint()
 
     def bring_selected_forward(self):
         layer_id = self.canvas.selected_layer_id()
         if not layer_id:
             return
         layer = self.controller.bring_forward(layer_id)
-        self.canvas.items_by_layer_id[layer.id].setZValue(layer.computed_z_index)
+        self.canvas.sync_item_z_order(layer)
         self._refresh_inspector(layer.id)
+        self.canvas.request_repaint()
 
     def send_selected_backward(self):
         layer_id = self.canvas.selected_layer_id()
         if not layer_id:
             return
         layer = self.controller.send_backward(layer_id)
-        self.canvas.items_by_layer_id[layer.id].setZValue(layer.computed_z_index)
+        self.canvas.sync_item_z_order(layer)
         self._refresh_inspector(layer.id)
+        self.canvas.request_repaint()
 
     def move_selected_to_slot(self):
         layer_id = self.canvas.selected_layer_id()
@@ -269,11 +329,10 @@ class StudioComposerWindow(QWidget if QWidget else object):
             if layer is not None:
                 self._set_selected_slot_combo(layer.layer_slot)
             return
-        item = self.canvas.items_by_layer_id.get(layer.id)
-        if item is not None:
-            item.setZValue(layer.computed_z_index)
+        self.canvas.sync_item_z_order(layer)
         self._refresh_layer_panel()
         self._refresh_inspector(layer.id)
+        self.canvas.request_repaint()
 
     def on_selected_slot_changed(self, *_args):
         if self._syncing_slot_combo:
@@ -306,6 +365,7 @@ class StudioComposerWindow(QWidget if QWidget else object):
             value = min(max_value, value)
         enhancement[key] = round(value, 3)
         self._refresh_inspector(layer.id)
+        self.canvas.request_repaint()
 
     def webcam_brightness_up(self):
         self._adjust_webcam_enhancement("brightness", 10, -100, 100)
@@ -360,12 +420,14 @@ class StudioComposerWindow(QWidget if QWidget else object):
         self.canvas.lock_items(True)
         self._set_slot_controls_enabled(False)
         self._refresh_inspector(self.controller.scene.selected_layer_id)
+        self.canvas.request_repaint()
 
     def unlock_layout(self):
         self.controller.unlock_scene()
         self.canvas.lock_items(False)
         self._set_slot_controls_enabled(True)
         self._refresh_inspector(self.controller.scene.selected_layer_id)
+        self.canvas.request_repaint()
 
     def reset_selected_layer(self):
         layer_id = self.canvas.selected_layer_id()
@@ -373,18 +435,20 @@ class StudioComposerWindow(QWidget if QWidget else object):
             return
         layer = self.controller.move_layer(layer_id, 0, 0)
         layer.scale = 1.0
-        item = self.canvas.items_by_layer_id.get(layer_id)
+        item = self.canvas.get_item_by_layer_id(layer_id)
         if item:
             item.setPos(0, 0)
             item.setScale(1.0)
+            item.update()
         self._refresh_inspector(layer_id)
+        self.canvas.request_repaint()
 
     def _refresh_inspector(self, layer_id: str | None = None):
         if layer_id is None:
             layer_id = self.controller.scene.selected_layer_id
         layer = None
         if layer_id:
-            layer = next((item for item in self.controller.scene.layers if item.id == layer_id), None)
+            layer = next((item for item in self.controller.scene.layers if getattr(item, "id", None) == layer_id), None)
         if layer is None:
             self.inspector.update_values({})
             return

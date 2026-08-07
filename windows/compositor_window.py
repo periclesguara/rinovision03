@@ -1,15 +1,13 @@
 from PySide6.QtWidgets import (
     QApplication,
-    QWidget,
     QPushButton,
     QVBoxLayout,
     QHBoxLayout,
-    QLabel,
     QMainWindow,
     QFrame,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QFont
+from PySide6.QtGui import QFont
+
 from managers.scene_manager import SceneManager
 
 
@@ -21,6 +19,9 @@ class CompositorWindow(QMainWindow):
         self.setStyleSheet("background-color: #1e1e1e; color: white;")
 
         self.scene_manager = SceneManager()
+        self.webcam_window = None
+        self.base_window = None
+        self.image_composer_window = None
 
         self.central_frame = QFrame()
         self.central_frame.setStyleSheet("background-color: #2c2c2c;")
@@ -107,16 +108,8 @@ class CompositorWindow(QMainWindow):
     def placeholder_edition(self):
         print("[Editor] Janela de edição ainda não implementada.")
 
-
-if __name__ == "__main__":
-    app = QApplication([])
-    compositor = CompositorWindow()
-    compositor.show()
-    app.exec()
-
     def open_webcam_window(self):
         from windows.webcam_window import WebcamWindow
-from windows.image_composer_window import ImageComposerWindow
 
         self.webcam_window = WebcamWindow()
         self.webcam_window.show()
@@ -125,15 +118,18 @@ from windows.image_composer_window import ImageComposerWindow
         from windows.base_window import BaseWindow
 
         self.base_window = BaseWindow()
-        self.image_composer_window = ImageComposerWindow()
         self.base_window.show()
 
-
-
-
-
     def open_image_composer(self):
+        from windows.image_composer_window import ImageComposerWindow
+
         if self.image_composer_window is None:
             self.image_composer_window = ImageComposerWindow(self.scene_manager)
         self.image_composer_window.show()
 
+
+if __name__ == "__main__":
+    app = QApplication([])
+    compositor = CompositorWindow()
+    compositor.show()
+    app.exec()

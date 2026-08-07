@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rinovision03"
+version = "0.2.0"
+description = "Experimental PySide6 multimedia studio"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "ffmpeg-python>=0.2,<1",
+    "mediapipe>=0.10,<1",
+    "moviepy>=1.0.3,<2",
+    "numpy>=1.26,<3",
+    "openai>=2.24,<3",
+    "opencv-contrib-python>=4.11,<5",
+    "pillow>=11,<13",
+    "PySide6>=6.9,<7",
+    "sounddevice>=0.5,<1",
+    "soundfile>=0.13,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<10",
+    "pytest-qt>=4.4,<5",
+    "ruff>=0.12,<1",
+]
+
+[tool.setuptools.packages.find]
+include = [
+    "assets*",
+    "components*",
+    "frames*",
+    "gui*",
+    "managers*",
+    "music*",
+    "patch*",
+    "src*",
+    "utils*",
+    "windows*",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]

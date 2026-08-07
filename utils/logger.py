@@ -1,12 +1,11 @@
 import logging
-import os
+from pathlib import Path
 from logging.handlers import TimedRotatingFileHandler
-from datetime import datetime
 
 
 def setup_logger(name="RinoVision", log_dir="logs"):
-    os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, "runtime.log")
+    Path(log_dir).mkdir(parents=True, exist_ok=True)
+    log_path = Path(log_dir) / "runtime.log"
     handler = TimedRotatingFileHandler(log_path, when="midnight", backupCount=7)
 
     formatter = logging.Formatter(
@@ -16,5 +15,8 @@ def setup_logger(name="RinoVision", log_dir="logs"):
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
+    if not logger.handlers:
+        logger.addHandler(handler)
+    else:
+        handler.close()
     return logger

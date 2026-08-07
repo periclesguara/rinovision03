@@ -1,4 +1,3 @@
-import ffmpeg
 import time
 import threading
 import subprocess

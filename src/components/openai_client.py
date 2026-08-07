@@ -1,19 +1,33 @@
-import openai
 import os
-from dotenv import load_dotenv
+from functools import lru_cache
 
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
+from openai import OpenAI
 
-client = openai.OpenAI(api_key=api_key)
 
-def gerar_resposta(mensagem_usuario: str) -> str:
-    try:
-        resposta = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": mensagem_usuario}],
-            temperature=0.7
-        )
-        return resposta.choices[0].message.content
-    except Exception as e:
-        return f"[ERRO] Falha ao chamar a OpenAI API: {e}"
+@lru_cache(maxsize=1)
+def get_client() -> OpenAI:
+    """Create one SDK client using OPENAI_API_KEY from the environment."""
+    return OpenAI()
+
+
+def gerar_resposta(
+    mensagem_usuario: str,
+    *,
+    client: OpenAI | None = None,
+    model: str | None = None,
+) -> str:
+    """Generate text through the Responses API.
+
+    The optional client makes the function testable without a network call.
+    Runtime authentication remains the SDK default: OPENAI_API_KEY.
+    """
+    prompt = mensagem_usuario.strip()
+    if not prompt:
+        raise ValueError("mensagem_usuario não pode ser vazia")
+
+    sdk = client or get_client()
+    response = sdk.responses.create(
+        model=model or os.getenv("OPENAI_MODEL", "gpt-5.6"),
+        input=prompt,
+    )
+    return response.output_text

@@ -1,32 +1,47 @@
-# Ambientes virtuais
-venv/
-.env/
-
-# Cache Python
+# Python
 __pycache__/
 *.py[cod]
-*.pyo
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-# Arquivos temporários e de log
+# Environments and credentials
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Runtime logs, caches, and generated media
+logs/
 *.log
 *.tmp
-
-# Arquivos de mídia grandes
+audio_temp.*
+output/
+*.mp3
+*.wav
 *.mp4
 *.avi
 *.mov
 *.mkv
+
+# Local visual assets
 *.png
 *.jpg
+*.jpeg
+*.bmp
 
-# Arquivos do sistema
+# Editors and operating systems
 .DS_Store
 Thumbs.db
-
-# Configs locais de IDE
 .vscode/
 .idea/
-
-.env
-__pycache__/
-*.pyc
+*~
+*.bak
+*.bak.*
